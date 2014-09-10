@@ -25,7 +25,7 @@ function Mlp() {
 		return tmp;
 	}
 
-
+	//test
 	this.AddEvents = function(elem) {
 		var
 			control = elem.getElementsByClassName("play-pause")[0],
