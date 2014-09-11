@@ -65,8 +65,12 @@ function Mlp() {
 			if(bg.length > 5) {
 				var img = new Image();
 				img.src = bg;
-				el.style.width = img.width;
-				el.style.height = img.height;
+				img.need = el;
+				img.onload = function(e) {
+					var t = e.target;
+					t.need.style.width = t.width;
+					t.need.style.height = t.height;
+				}
 			}
 		}
 	}
