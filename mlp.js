@@ -1,14 +1,17 @@
 function Mlp() {
 	console.log("MyLittlePlayer init.");
 	this.count = 0;
+	this.players = [];
+	T = this;
 	//Create new player from selector
-	this.Select = function(selector) {
+	this.Select = function(selector, parrent) {
+		var parrent = parrent || document;
 		if(selector[0] == ".") {
-			var element = document.getElementsByClassName(selector.slice(1));
+			var element = parrent.getElementsByClassName(selector.slice(1));
 		} else if( selector[0] == "#") {
-			var element = document.getElementById(selector.slice(1));
+			var element = parrent.getElementById(selector.slice(1));
 		} else {
-			var element = document.getElementsByTagName(selector)[0];
+			var element = parrent.getElementsByTagName(selector)[0];
 		}
 
 		return element || false;
@@ -48,7 +51,7 @@ function Mlp() {
 			"root": elem,
 			"player": player
 		}	
-
+		this.players[this.count] = ret;
 		return ret;
 	}
 
@@ -76,11 +79,14 @@ function Mlp() {
 	}
 
 	this.PlayPause = function(e) {
+		var id = e.target.offsetParent.getAttribute("id").replace("mlp-", "");
 		var isPlay = (e.target.className.indexOf("pause") != -1) ? false : true;
 		if(isPlay) {
 			e.target.className = "control-pause";
+			T.players[id].player.play();
 		} else {
 			e.target.className = "control-play";
+			T.players[id].player.pause();
 		}
 	}
 
