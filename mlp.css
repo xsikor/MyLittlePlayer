@@ -7,14 +7,17 @@
 	top: 0px;
 	left: 0px;
 	background: url('/play_standard.jpg');
+	cursor: pointer;
 }
 
 .mlp-player .control-play {
 	background: url('/play_standard.jpg');
+	cursor: pointer;
 }
 
 .mlp-player .control-pause {
 	background: url('/stop_standard.jpg');
+	cursor: pointer;
 }
 
 
