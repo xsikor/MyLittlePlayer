@@ -58,8 +58,10 @@ function Mlp() {
 			loaded = elem.getElementsByClassName("loaded")[0],
 			time = elem.getElementsByClassName("time")[0],
 			volume_ctrl = elem.getElementsByClassName("volume-ctrl")[0],
-			vol_ico = volume_ctrl.getElementsByClassName("icon")[0],
+			ico_muted = volume_ctrl.getElementsByClassName("muted")[0],
+			ico_unmuted = volume_ctrl.getElementsByClassName("unmuted")[0],
 			vol_scrub = volume_ctrl.getElementsByClassName("scrubber")[0],
+			vol_scroller = vol_scrub.getElementsByClassName("scroller")[0],
 			message = elem.getElementsByClassName("message")[0],
 			player = elem.getElementsByTagName("audio")[0];
 
@@ -69,8 +71,8 @@ function Mlp() {
 			"loaded": loaded,
 			"time": time,
 			"volume_ctrl": volume_ctrl,
-			"vol_ico": vol_ico,
-			"vol_scrub": vol_scrub,
+			"vol_ico": [ico_unmuted, ico_muted],
+			"vol_scrub": [vol_scrub, vol_scroller],
 			"message": message,
 			"root": elem,
 			"player": player,
@@ -153,8 +155,14 @@ function Mlp() {
 			<div class="time"></div>\
 		</div>\
 		<div class="volume-ctrl">\
-			<div class="icon"></div>\
-			<div class="scrubber"></div>\
+			<div class="icon">\
+				<div class="muted"></div>\
+				<div class="unmuted"></div>\
+			</div>\
+			<div class="scrubber">\
+				<div class="full_bar"></div>\
+				<div class="scroller"></div>\
+			</div>\
 		</div>\
 		<div class="message"></div>';
 }

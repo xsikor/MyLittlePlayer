@@ -9,12 +9,10 @@
 
 .mlp-player .control .play {
 	position: absolute;
-	cursor: pointer;
 }
 
 .mlp-player .control .stop {
 	position: absolute;
-	cursor: pointer;
 }
 
 
@@ -40,12 +38,23 @@
 
 .mlp-player .volume-ctrl .icon {
 	position: absolute;
+	cursor: pointer;
 }
 
 
 .mlp-player .volume-ctrl .scrubber {
 	position: absolute;
 }
+
+.mlp-player .volume-ctrl .scrubber .full_bar {
+	position: absolute;
+}
+
+.mlp-player .volume-ctrl .scrubber .scroller {
+	position: absolute;
+	z-index: 2;
+}
+
 
 .mlp-player .message {
 	position: absolute;
