@@ -3,69 +3,50 @@
 }
 
 .mlp-player .control {
-	position: relative;
-	top: 0px;
-	left: 0px;
-	background: url('/play_standard.jpg');
+	position: absolute;
 	cursor: pointer;
 }
 
-.mlp-player .control-play {
-	background: url('/play_standard.jpg');
+.mlp-player .control .play {
+	position: absolute;
 	cursor: pointer;
 }
 
-.mlp-player .control-pause {
-	background: url('/stop_standard.jpg');
+.mlp-player .control .stop {
+	position: absolute;
 	cursor: pointer;
 }
 
 
 .mlp-player .body {
-	position: relative;
-	top: 0px;
-	left: 0px;
+	position: absolute;
 }
 
 .mlp-player .body .progress {
-	position: relative;
-	top: 0px;
-	left: 0px;
+	position: absolute;
 }
 
 .mlp-player .body .loaded {
-	position: relative;
-	top: 0px;
-	left: 0px;
+	position: absolute;
 }
 
 .mlp-player .body .time {
-	position: relative;
-	top: 0px;
-	left: 0px;
+	position: absolute;
 }
 
 .mlp-player .volume-ctrl {
-	position: relative;
-	top: 0px;
-	left: 0px;
+	position: absolute;
 }
 
 .mlp-player .volume-ctrl .icon {
-	position: relative;
-	top: 0px;
-	left: 0px;
+	position: absolute;
 }
 
 
 .mlp-player .volume-ctrl .scrubber {
-	position: relative;
-	top: 0px;
-	left: 0px;
+	position: absolute;
 }
 
 .mlp-player .message {
-	position: relative;
-	top: 0px;
-	left: 0px;
+	position: absolute;
 }
