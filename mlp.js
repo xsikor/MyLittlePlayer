@@ -1,9 +1,10 @@
-function Mlp() {
+function Mlp(selector) {
 	console.log("MyLittlePlayer init.");
 	this.count = 0;
 	this.players = [];
 	T = this;
-	//Create new player from selector
+
+	//Select elements by CSS selectors
 	this.Select = function(selector, parrent) {
 		var parrent = parrent || document;
 		if(selector[0] == ".") {
@@ -146,6 +147,10 @@ function Mlp() {
 		}
 	}
 
+	//For more comfortable api
+	this.Play = function() {
+		
+	}
 	this.Root = function(el) {
 		return(el.className != "mlp-player" && el.className != "") ? this.Root(el.parentElement) : el;
 	}
@@ -186,6 +191,8 @@ function Mlp() {
 		<div class="message"></div>';
 }
 
+
+//My function
 function getStyle(elem, option) {
 	var option = option || false;
 	if(typeof elem != "object")
