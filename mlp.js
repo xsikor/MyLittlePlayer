@@ -137,12 +137,10 @@ function Mlp() {
 		}
 
 		if(isPlay) {
-			root.control[1].style.display  = "none";
-			root.control[0].style.display = "block";
+			hideShow(root.control, true);
 			root.player.pause();
 		} else {
-			root.control[0].style.display  = "none";
-			root.control[1].style.display = "block";
+			hideShow(root.control);
 			root.player.play();
 		}
 	}
@@ -152,7 +150,16 @@ function Mlp() {
 	}
 
 	this.MuteUnmute = function(e) {
-
+		var root = T.Root(e.target).mlp;
+		var isMuted = (e.target.className == "muted") ? false : true;
+		if(isMuted) {
+			root.player.volume = 0;
+			hideShow(root.vol_ico);
+		}
+		else {
+			root.player.volume = 1;
+			hideShow(root.vol_ico, true);
+		}
 	}
 
 	this.markup = '\
@@ -187,4 +194,18 @@ function getStyle(elem, option) {
 		return ret[option] || false;
 	else
 		return ret;
+}
+
+
+function hideShow(first, secReverse) {
+	if(typeof first == "object" && secReverse == undefined) {
+		secReverse = first[1];
+		first = first[0];
+	} else if(typeof first == "object" && secReverse === true) {
+		secReverse = first[0];
+		first = first[1];
+	}
+
+	first.style.display  = "none";
+	secReverse.style.display = "block";
 }
