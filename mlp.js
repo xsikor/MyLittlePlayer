@@ -79,13 +79,20 @@ function Mlp() {
 			"isOnline": false
 		}	
 		this.players[this.count] = ret;
+		elem.mlp = ret;
+
 		return ret;
 	}
 
 	//test
 	this.AddEvents = function(obj) {
+		//Play & Pause logic
 		obj.control[0].addEventListener("click", this.PlayPause);
 		obj.control[1].addEventListener("click", this.PlayPause);
+
+		//Muted & unmuted logic
+		obj.vol_ico[0].addEventListener("click", this.MuteUnmute);
+		obj.vol_ico[1].addEventListener("click", this.MuteUnmute);
 	}
 
 	this.LoadCss = function(obj) {
@@ -115,34 +122,38 @@ function Mlp() {
 	}
 
 	this.PlayPause = function(e) {
-		var id = e.target.offsetParent.offsetParent.getAttribute("id").replace("mlp-", "");
+		var root = T.Root(e.target).mlp;
 		//If click class is play - start playing
 		var isPlay = (e.target.className == "play") ? false : true;
-		if(isPlay) {
-			T.players[id].control[1].style.display  = "none";
-			T.players[id].control[0].style.display = "block";
-			T.players[id].player.pause();
-		} else {
-			T.players[id].control[0].style.display  = "none";
-			T.players[id].control[1].style.display = "block";
-
-			if(T.players[id].isOnline) {
-				var src = T.players[id].player.src;
-				var date = new Date();
-				if(src.indexOf("cache") == -1) {
-					T.players[id].player.src = src+"?cache="+date.getTime();
-				} else {
-					src = src.slice(0, src.indexOf("?cache"));
-					T.players[id].player.src = src+"?cache="+date.getTime();
-				}
-				T.players[id].player.load();
+		if(root.isOnline) {
+			var src = root.player.src;
+			var date = new Date();
+			if(src.indexOf("cache") == -1) {
+				root.player.src = src+"?cache="+date.getTime();
+			} else {
+				src = src.slice(0, src.indexOf("?cache"));
+				root.player.src = src+"?cache="+date.getTime();
 			}
+		}
 
-			T.players[id].player.play();
+		if(isPlay) {
+			root.control[1].style.display  = "none";
+			root.control[0].style.display = "block";
+			root.player.pause();
+		} else {
+			root.control[0].style.display  = "none";
+			root.control[1].style.display = "block";
+			root.player.play();
 		}
 	}
 
+	this.Root = function(el) {
+		return(el.className != "mlp-player" && el.className != "") ? this.Root(el.parentElement) : el;
+	}
 
+	this.MuteUnmute = function(e) {
+
+	}
 
 	this.markup = '\
 		<div class="control">\
