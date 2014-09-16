@@ -36,6 +36,7 @@ function Mlp() {
 	}
 
 	this.Create = function(selector) {
+
 		if(typeof selector == "string")
 			var elem = this.Select(selector);
 		else 
@@ -153,11 +154,11 @@ function Mlp() {
 		var root = T.Root(e.target).mlp;
 		var isMuted = (e.target.className == "muted") ? false : true;
 		if(isMuted) {
-			root.player.volume = 0;
+			root.player.muted = true;
 			hideShow(root.vol_ico);
 		}
 		else {
-			root.player.volume = 1;
+			root.player.muted = false;
 			hideShow(root.vol_ico, true);
 		}
 	}
