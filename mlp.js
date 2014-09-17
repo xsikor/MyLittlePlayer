@@ -1,11 +1,17 @@
-function Mlp(selector) {
-	console.log("MyLittlePlayer init.");
-	this.count = 0;
-	this.players = [];
-	T = this;
+(function() {
 
+	Mlp = function (option) {
+		var option = option || false;
+		console.log("MyLittlePlayer init.");
+		this.count = 0;
+		this.players = this.Select(option.selector);
+		this.isOnline = option.isOnline || false;
+		this.loadCss = (option.loadCss == true) ? this.LoadCss() : false;
+		this.elements = null;
+	}
 	//Select elements by CSS selectors
-	this.Select = function(selector, parrent) {
+	Mlp.prototype.Select = function(selector, parrent) {
+		var selector = selector || "audio";
 		var parrent = parrent || document;
 		if(selector[0] == ".") {
 			var element = parrent.getElementsByClassName(selector.slice(1));
@@ -15,33 +21,25 @@ function Mlp(selector) {
 			var element = parrent.getElementsByTagName(selector);
 		}
 
-		return element || false;
+
+		return this.Create(element);
 	}
 
-	this.CreateAll = function(online) {
+	Mlp.prototype.Create = function(elems) {
 		var obj = [];
-		var aud = this.Select("audio");
-		for(i in aud) {
-			if(typeof aud[i] != "object")
+
+		for(i in elems) {
+			if(typeof elems[i] != "object")
 				continue;
 
-			obj[i] = this.Create(aud[i]);
-			
-			this.LoadCss(obj[i]);
+			obj[i] = this.createHelper(elems[i]);
 			this.AddEvents(obj[i]);
-			
-			if(online)
-				obj[i].isOnline = true;
 		}
+
 		return obj;
 	}
 
-	this.Create = function(selector) {
-
-		if(typeof selector == "string")
-			var elem = this.Select(selector);
-		else 
-			var elem = selector;
+	Mlp.prototype.createHelper = function(elem) {
 
 		if(elem == false || elem.length != undefined)
 			return false
@@ -51,7 +49,8 @@ function Mlp(selector) {
 		tmp.appendChild(elem.cloneNode(true));
 		tmp.innerHTML += this.markup;
 		elem.outerHTML = tmp.outerHTML;
-		elem = this.Select("#mlp-"+this.count.toString());
+
+		elem = document.getElementById("mlp-"+this.count.toString());
 		//need to remove this shit or meybe not
 		var control = elem.getElementsByClassName("control")[0],
 			play = control.getElementsByClassName("play")[0],
@@ -67,7 +66,9 @@ function Mlp(selector) {
 			message = elem.getElementsByClassName("message")[0],
 			player = elem.getElementsByTagName("audio")[0];
 
-		var ret = {
+			elem.player = player;
+
+		return {
 			"control": [play, stop], //control, maybe need it 
 			"progress": progress,
 			"loaded": loaded,
@@ -76,28 +77,23 @@ function Mlp(selector) {
 			"vol_ico": [ico_unmuted, ico_muted],
 			"vol_scrub": [vol_scrub, vol_scroller],
 			"message": message,
-			"root": elem,
 			"player": player,
-			"isOnline": false
+			"src": player.src,
 		}	
-		this.players[this.count] = ret;
-		elem.mlp = ret;
-
-		return ret;
 	}
 
-	this.AddEvents = function(obj) {
+	Mlp.prototype.AddEvents = function(obj) {
 		//Play & Pause logic
 		obj.control[0].addEventListener("click", this.PlayPause);
 		obj.control[1].addEventListener("click", this.PlayPause);
 
 		//Muted & unmuted logic
-		obj.vol_ico[0].addEventListener("click", this.MuteUnmute);
-		obj.vol_ico[1].addEventListener("click", this.MuteUnmute);
+		// obj.vol_ico[0].addEventListener("click", this.MuteUnmute);
+		// obj.vol_ico[1].addEventListener("click", this.MuteUnmute);
 	}
-
-	this.LoadCss = function(obj) {
-		for(k in obj) {
+	
+	Mlp.prototype.LoadCss = function() {
+		for(k in this.players) {
 			var el = obj[k];
 
 			if(el.length != undefined) {
@@ -122,11 +118,11 @@ function Mlp(selector) {
 		}
 	}
 
-	this.PlayPause = function(e) {
-		var root = T.Root(e.target).mlp;
+	Mlp.prototype.PlayPause = function(e) {
 		//If click class is play - start playing
+		root = this.Root(e.target);
 		var isPlay = (e.target.className == "play") ? false : true;
-		if(root.isOnline) {
+		if(this.isOnline) {
 			var src = root.player.src;
 			var date = new Date();
 			if(src.indexOf("cache") == -1) {
@@ -147,14 +143,25 @@ function Mlp(selector) {
 	}
 
 	//For more comfortable api
-	this.Play = function() {
-		
+	Mlp.prototype.Play = function(id) {
+		var id = id || -1;
+		if(id > 0) {
+			this.players[id].player.play();
+			hideShow(this.players[id].control);
+		}
+		else {
+			var total = this.players.length; 
+			for(i = 0; i < total; i++) {
+				this.players[i].player.play();
+				hideShow(this.players[i].control);
+			}
+		}	
 	}
-	this.Root = function(el) {
+	Mlp.prototype.Root = function(el) {
 		return(el.className != "mlp-player" && el.className != "") ? this.Root(el.parentElement) : el;
 	}
 
-	this.MuteUnmute = function(e) {
+	/*this.MuteUnmute = function(e) {
 		var root = T.Root(e.target).mlp;
 		var isMuted = (e.target.className == "muted") ? false : true;
 		if(isMuted) {
@@ -165,9 +172,9 @@ function Mlp(selector) {
 			root.player.muted = false;
 			hideShow(root.vol_ico, true);
 		}
-	}
+	}*/
 
-	this.markup = '\
+	Mlp.prototype.markup = '\
 		<div class="control">\
 			<div class="play"></div>\
 			<div class="stop"></div>\
@@ -188,31 +195,31 @@ function Mlp(selector) {
 			</div>\
 		</div>\
 		<div class="message"></div>';
-}
 
 
-//My function
-function getStyle(elem, option) {
-	var option = option || false;
-	if(typeof elem != "object")
-		return false;
-	ret = window.getComputedStyle(elem);
-	if(option)
-		return ret[option] || false;
-	else
-		return ret;
-}
-
-
-function hideShow(first, secReverse) {
-	if(typeof first == "object" && secReverse == undefined) {
-		secReverse = first[1];
-		first = first[0];
-	} else if(typeof first == "object" && secReverse === true) {
-		secReverse = first[0];
-		first = first[1];
+	//My function
+	function getStyle(elem, option) {
+		var option = option || false;
+		if(typeof elem != "object")
+			return false;
+		ret = window.getComputedStyle(elem);
+		if(option)
+			return ret[option] || false;
+		else
+			return ret;
 	}
 
-	first.style.display  = "none";
-	secReverse.style.display = "block";
-}
+
+	function hideShow(first, secReverse) {
+		if(typeof first == "object" && secReverse == undefined) {
+			secReverse = first[1];
+			first = first[0];
+		} else if(typeof first == "object" && secReverse === true) {
+			secReverse = first[0];
+			first = first[1];
+		}
+
+		first.style.display  = "none";
+		secReverse.style.display = "block";
+	}
+}).call(this);
