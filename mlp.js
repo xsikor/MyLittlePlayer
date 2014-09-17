@@ -86,7 +86,6 @@ function Mlp(selector) {
 		return ret;
 	}
 
-	//test
 	this.AddEvents = function(obj) {
 		//Play & Pause logic
 		obj.control[0].addEventListener("click", this.PlayPause);
