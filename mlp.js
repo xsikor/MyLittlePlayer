@@ -1,13 +1,13 @@
 (function() {
-
+	var count = 0;
+	var test = 0;
 	Mlp = function (option) {
-		var option = option || false;
-		console.log("MyLittlePlayer init.");
-		this.count = 0;
-		this.players = this.Select(option.selector);
+		this.option = option || false;
+		this.players = [];
+		this.elems = null;
 		this.isOnline = option.isOnline || false;
-		this.loadCss = (option.loadCss == true) ? this.LoadCss() : false;
-		this.elements = null;
+		this.loadCss = (option.loadCss == true) ? true : false;
+		this.preload = option.preload || "none"
 	}
 	//Select elements by CSS selectors
 	Mlp.prototype.Select = function(selector, parrent) {
@@ -22,53 +22,67 @@
 		}
 
 
-		return this.Create(element);
+		return element;
 	}
 
 	Mlp.prototype.Create = function(elems) {
-		var obj = [];
+		var elems = elems || "audio";
 
-		for(i in elems) {
+		if(typeof elems == "string") {
+			elems = this.Select(elems);
+		}
+
+		if(elems.length == undefined) {
+			this.createHelper(elems);
+			return true;
+		}
+
+		var total = elems.length; //Hack for chrome
+
+		for(i=0; i<total; i++) {
 			if(typeof elems[i] != "object")
 				continue;
 
-			obj[i] = this.createHelper(elems[i]);
-			this.AddEvents(obj[i]);
+			var tmp = new Mlp(this.option);
+			tmp.Create(elems[i], i);
+			this.players.push(tmp);
+				
 		}
-
-		return obj;
 	}
 
 	Mlp.prototype.createHelper = function(elem) {
-
 		if(elem == false || elem.length != undefined)
 			return false
+		elem.preload = this.preload;
 		var tmp = document.createElement('div');
 		tmp.setAttribute("class", "mlp-player");
-		tmp.setAttribute("id", "mlp-"+(++this.count).toString());
+		tmp.setAttribute("id", "mlp-"+(++count).toString());
 		tmp.appendChild(elem.cloneNode(true));
 		tmp.innerHTML += this.markup;
 		elem.outerHTML = tmp.outerHTML;
 
-		elem = document.getElementById("mlp-"+this.count.toString());
+		elem = document.getElementById("mlp-"+count.toString());
+		elem.self = this;
 		//need to remove this shit or meybe not
 		var control = elem.getElementsByClassName("control")[0],
 			play = control.getElementsByClassName("play")[0],
 			stop = control.getElementsByClassName("stop")[0],
+			
 			progress = elem.getElementsByClassName("progress")[0],
 			loaded = elem.getElementsByClassName("loaded")[0],
-			time = elem.getElementsByClassName("time")[0],
+
 			volume_ctrl = elem.getElementsByClassName("volume-ctrl")[0],
 			ico_muted = volume_ctrl.getElementsByClassName("muted")[0],
 			ico_unmuted = volume_ctrl.getElementsByClassName("unmuted")[0],
+
 			vol_scrub = volume_ctrl.getElementsByClassName("scrubber")[0],
 			vol_scroller = vol_scrub.getElementsByClassName("scroller")[0],
+
+			player = elem.getElementsByTagName("audio")[0],
 			message = elem.getElementsByClassName("message")[0],
-			player = elem.getElementsByTagName("audio")[0];
+			time = elem.getElementsByClassName("time")[0];
 
-			elem.player = player;
-
-		return {
+		this.elems = {
 			"control": [play, stop], //control, maybe need it 
 			"progress": progress,
 			"loaded": loaded,
@@ -78,24 +92,26 @@
 			"vol_scrub": [vol_scrub, vol_scroller],
 			"message": message,
 			"player": player,
-			"src": player.src,
-		}	
+		}
+		if(this.loadCss)
+			this.LoadCss();
+		this.AddEvents();	
 	}
 
-	Mlp.prototype.AddEvents = function(obj) {
+	Mlp.prototype.AddEvents = function() {
 		//Play & Pause logic
-		obj.control[0].addEventListener("click", this.PlayPause);
-		obj.control[1].addEventListener("click", this.PlayPause);
+		this.elems.control[0].addEventListener("click", this.PlayPause);
+		this.elems.control[1].addEventListener("click", this.PlayPause);
 
 		//Muted & unmuted logic
-		// obj.vol_ico[0].addEventListener("click", this.MuteUnmute);
-		// obj.vol_ico[1].addEventListener("click", this.MuteUnmute);
+		this.elems.vol_ico[0].addEventListener("click", this.MuteUnmute);
+		this.elems.vol_ico[1].addEventListener("click", this.MuteUnmute);
 	}
 	
-	Mlp.prototype.LoadCss = function() {
-		for(k in this.players) {
+	Mlp.prototype.LoadCss = function(obj) {
+		var obj = obj || this.elems
+		for(k in obj) {
 			var el = obj[k];
-
 			if(el.length != undefined) {
 				this.LoadCss(el);
 				continue;
@@ -120,59 +136,46 @@
 
 	Mlp.prototype.PlayPause = function(e) {
 		//If click class is play - start playing
-		root = this.Root(e.target);
+		var root = Root(e.target).self;
 		var isPlay = (e.target.className == "play") ? false : true;
-		if(this.isOnline) {
-			var src = root.player.src;
+		if(root.isOnline) {
+			var src = root.elems.player.src;
 			var date = new Date();
 			if(src.indexOf("cache") == -1) {
-				root.player.src = src+"?cache="+date.getTime();
+				root.elems.player.src = src+"?cache="+date.getTime();
 			} else {
 				src = src.slice(0, src.indexOf("?cache"));
-				root.player.src = src+"?cache="+date.getTime();
+				root.elems.player.src = src+"?cache="+date.getTime();
 			}
 		}
 
 		if(isPlay) {
-			hideShow(root.control, true);
-			root.player.pause();
+			hideShow(root.elems.control, true);
+			root.elems.player.pause();
 		} else {
-			hideShow(root.control);
-			root.player.play();
+			hideShow(root.elems.control);
+			root.elems.player.play();
 		}
 	}
 
 	//For more comfortable api
-	Mlp.prototype.Play = function(id) {
-		var id = id || -1;
-		if(id > 0) {
-			this.players[id].player.play();
-			hideShow(this.players[id].control);
-		}
-		else {
-			var total = this.players.length; 
-			for(i = 0; i < total; i++) {
-				this.players[i].player.play();
-				hideShow(this.players[i].control);
-			}
-		}	
-	}
-	Mlp.prototype.Root = function(el) {
-		return(el.className != "mlp-player" && el.className != "") ? this.Root(el.parentElement) : el;
+	Mlp.prototype.Play = function() {
+		this.elems.player.play();
+		hideShow(this.elems.control);
 	}
 
-	/*this.MuteUnmute = function(e) {
-		var root = T.Root(e.target).mlp;
+	Mlp.prototype.MuteUnmute = function(e) {
+		var root = Root(e.target).self.elems;
 		var isMuted = (e.target.className == "muted") ? false : true;
 		if(isMuted) {
 			root.player.muted = true;
-			hideShow(root.vol_ico);
+					hideShow(root.vol_ico);
 		}
 		else {
 			root.player.muted = false;
 			hideShow(root.vol_ico, true);
 		}
-	}*/
+	}
 
 	Mlp.prototype.markup = '\
 		<div class="control">\
@@ -222,4 +225,9 @@
 		first.style.display  = "none";
 		secReverse.style.display = "block";
 	}
+
+	function Root(el) {
+		return(el.className != "mlp-player" && el.className != "") ? Root(el.parentElement) : el;
+	}
+
 }).call(this);
