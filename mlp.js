@@ -1,9 +1,10 @@
 (function() {
 	var count = 0;
-	var test = 0;
 	Mlp = function (option) {
+		console.log("MyLittlePlayer init", count);
 		this.option = option || false;
 		this.players = [];
+		this.player = null;
 		this.elems = null;
 		this.isOnline = option.isOnline || false;
 		this.loadCss = (option.loadCss == true) ? true : false;
@@ -77,11 +78,11 @@
 
 			vol_scrub = volume_ctrl.getElementsByClassName("scrubber")[0],
 			vol_scroller = vol_scrub.getElementsByClassName("scroller")[0],
+			vol_fulbar = vol_scrub.getElementsByClassName("full_bar")[0],
 
-			player = elem.getElementsByTagName("audio")[0],
 			message = elem.getElementsByClassName("message")[0],
 			time = elem.getElementsByClassName("time")[0];
-
+		this.player = elem.getElementsByTagName("audio")[0];
 		this.elems = {
 			"control": [play, stop], //control, maybe need it 
 			"progress": progress,
@@ -89,9 +90,8 @@
 			"time": time,
 			"volume_ctrl": volume_ctrl,
 			"vol_ico": [ico_unmuted, ico_muted],
-			"vol_scrub": [vol_scrub, vol_scroller],
+			"vol_scrub": [vol_scrub, vol_scroller, vol_fulbar],
 			"message": message,
-			"player": player,
 		}
 		if(this.loadCss)
 			this.LoadCss();
@@ -106,6 +106,10 @@
 		//Muted & unmuted logic
 		this.elems.vol_ico[0].addEventListener("click", this.MuteUnmute);
 		this.elems.vol_ico[1].addEventListener("click", this.MuteUnmute);
+
+		//Volume logic
+		this.elems.vol_scrub[1].addEventListener("mousedown", this.ScrubberEvents)
+		this.elems.vol_scrub[1].addEventListener("mouseup", this.ScrubberEvents)
 	}
 	
 	Mlp.prototype.LoadCss = function(obj) {
@@ -139,22 +143,22 @@
 		var root = Root(e.target).self;
 		var isPlay = (e.target.className == "play") ? false : true;
 		if(root.isOnline) {
-			var src = root.elems.player.src;
+			var src = root.player.src;
 			var date = new Date();
 			if(src.indexOf("cache") == -1) {
-				root.elems.player.src = src+"?cache="+date.getTime();
+				root.player.src = src+"?cache="+date.getTime();
 			} else {
 				src = src.slice(0, src.indexOf("?cache"));
-				root.elems.player.src = src+"?cache="+date.getTime();
+				root.player.src = src+"?cache="+date.getTime();
 			}
 		}
 
 		if(isPlay) {
 			hideShow(root.elems.control, true);
-			root.elems.player.pause();
+			root.player.pause();
 		} else {
 			hideShow(root.elems.control);
-			root.elems.player.play();
+			root.player.play();
 		}
 	}
 
@@ -165,17 +169,63 @@
 	}
 
 	Mlp.prototype.MuteUnmute = function(e) {
-		var root = Root(e.target).self.elems;
+		var root = Root(e.target).self;
 		var isMuted = (e.target.className == "muted") ? false : true;
 		if(isMuted) {
 			root.player.muted = true;
-					hideShow(root.vol_ico);
+					hideShow(root.elems.vol_ico);
 		}
 		else {
 			root.player.muted = false;
-			hideShow(root.vol_ico, true);
+			hideShow(root.elems.vol_ico, true);
 		}
 	}
+
+	Mlp.prototype.ScrubberEvents = function(e) {
+		var root = Root(e.target).self;
+		var scrub = root.elems.vol_scrub[1];
+		var bg = root.elems.vol_scrub[0];
+
+		if(e.buttons == 1) {
+			bg.addEventListener("mousemove", root.ScrubberMove, false);
+			scrub.addEventListener("mouseup", root.ScrubberMove, false);
+		}
+	};
+
+	Mlp.prototype.ScrubberMove = function(e) {
+		var root = Root(this).self;
+		var scrub = root.elems.vol_scrub[1];
+		var bg = root.elems.vol_scrub[0];
+		var bg_pos = bg.getBoundingClientRect();
+
+		//Holly shit
+		if(e.type == "mouseup" || e.type == "mouseleave") {
+			console.log("Leave");
+			bg.removeEventListener("mousemove", root.ScrubberMove, false);
+			scrub.removeEventListener("mouseup", root.ScrubberMove, false);
+		} else {
+			var move = scrub.getBoundingClientRect().left - e.clientX;
+			var left = (scrub.style.left != "") ? scrub.style.left : getStyle(scrub, "left");
+			left = parseInt(left);
+			var point = left - move;
+
+			if(point > (bg_pos.width - scrub.offsetWidth/2) || point <= 0) {
+				console.log("Leave");
+				bg.removeEventListener("mousemove", root.ScrubberMove, false);
+				scrub.removeEventListener("mouseup", root.ScrubberMove, false);
+			}
+
+			if(point > bg_pos.width - scrub.offsetWidth/2) {
+				point = (bg_pos.width - scrub.offsetWidth/2)-4;
+			}
+			scrub.style.left = point;
+
+			var volume = (bg_pos.width * point/50);
+			root.elems.vol_scrub[2].style.width = volume + "%";
+			root.player.volume = volume/100;
+		}
+	}
+
 
 	Mlp.prototype.markup = '\
 		<div class="control">\

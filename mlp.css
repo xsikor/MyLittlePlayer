@@ -43,6 +43,7 @@
 
 
 .mlp-player .volume-ctrl .scrubber {
+	cursor: pointer;
 	position: absolute;
 }
 
@@ -53,6 +54,8 @@
 .mlp-player .volume-ctrl .scrubber .scroller {
 	position: absolute;
 	z-index: 2;
+	left: 40%;
+	top: -35%;
 }
 
 
