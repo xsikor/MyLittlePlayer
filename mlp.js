@@ -7,7 +7,6 @@
 		this.player = null;
 		this.elems = null;
 		this.isOnline = option.isOnline || false;
-		this.loadCss = (option.loadCss == true) ? true : false;
 		this.preload = option.preload || "none"
 		this.loadCount = 0;
 		this.isReady = false;
@@ -98,8 +97,9 @@
 			"vol_scrub": [vol_scrub, vol_scroller, vol_fulbar],
 			"message": message,
 		}
-		if(this.loadCss)
+		if(this.option.loadCss)
 			this.LoadCss();
+
 		this.AddEvents();
 	}
 
@@ -152,6 +152,8 @@
 
 	Mlp.prototype.ready = function() {
 		this.isReady = true;
+		if(this.option.autoPlay)
+			this.Play();
 		this.render();
 	}
 
@@ -181,7 +183,7 @@
 
 	//For more comfortable api
 	Mlp.prototype.Play = function() {
-		this.elems.player.play();
+		this.player.play();
 		hideShow(this.elems.control);
 	}
 
