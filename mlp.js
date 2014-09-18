@@ -96,6 +96,7 @@
 			"vol_ico": [ico_unmuted, ico_muted],
 			"vol_scrub": [vol_scrub, vol_scroller, vol_fulbar],
 			"message": message,
+			"root": elem,
 		}
 		if(this.option.loadCss)
 			this.LoadCss();
@@ -278,6 +279,25 @@
 		this.elems.vol_scrub[2].style.width = (this.player.volume * 100) + "%";	
 		this.elems.vol_scrub[1].style.left = position;
 	}
+	//Bad method for add custom element to player
+	Mlp.prototype.addElement = function(option) {
+		if(option == undefined)
+			return false;
+		
+		var className = option.className
+		var parrent = option.parrent || this.elems.root;
+		var tagName = option.tagName || "div"
+
+		var tmp = document.createElement(tagName);
+		tmp.setAttribute("class", className);
+		this.elems[className] = tmp;
+		parrent.appendChild(tmp);
+
+		if(this.option.loadCss)
+			this.LoadCss();
+
+		return tmp;
+	}
 
 
 	Mlp.prototype.markup = '\
@@ -303,7 +323,7 @@
 		<div class="message"></div>';
 
 
-	//My function
+//My function's
 	function getStyle(elem, option) {
 		var option = option || false;
 		if(typeof elem != "object")
