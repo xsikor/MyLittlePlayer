@@ -204,8 +204,8 @@
 		var bg = root.elems.vol_scrub[0];
 
 		//if(e.buttons == 1) {
-			bg.addEventListener("mousemove", root.ScrubberMove, false);
-			scrub.addEventListener("mouseup", root.ScrubberMove, false);
+			root.elems.volume_ctrl.addEventListener("mousemove", root.ScrubberMove, false);
+			root.elems.volume_ctrl.addEventListener("mouseup", root.ScrubberMove, false);
 			root.elems.volume_ctrl.addEventListener("mouseleave", root.ScrubberMove, false);
 		//}
 		return true;
@@ -218,8 +218,8 @@
 		var bg_pos = bg.getBoundingClientRect();
 		//Holly shit
 		if(e.type == "mouseup" || e.type == "mouseleave") {
-			bg.removeEventListener("mousemove", root.ScrubberMove, false);
-			scrub.removeEventListener("mouseup", root.ScrubberMove, false);
+			root.elems.volume_ctrl.removeEventListener("mousemove", root.ScrubberMove, false);
+			root.elems.volume_ctrl.removeEventListener("mouseup", root.ScrubberMove, false);
 			root.elems.volume_ctrl.removeEventListener("mouseleave", root.ScrubberMove, false);
 		} else {
 			var move = scrub.getBoundingClientRect().left - e.clientX;
@@ -228,8 +228,8 @@
 			var point = left - move;
 
 			if(point > (bg_pos.width - scrub.offsetWidth/2) || point <= 0) {
-				bg.removeEventListener("mousemove", root.ScrubberMove, false);
-				scrub.removeEventListener("mouseup", root.ScrubberMove, false);
+				root.elems.volume_ctrl.removeEventListener("mousemove", root.ScrubberMove, false);
+				root.elems.volume_ctrl.removeEventListener("mouseup", root.ScrubberMove, false);
 			}
 
 			if(point > bg_pos.width - scrub.offsetWidth/2) {
