@@ -9,6 +9,8 @@
 		this.isOnline = option.isOnline || false;
 		this.loadCss = (option.loadCss == true) ? true : false;
 		this.preload = option.preload || "none"
+		this.loadCount = 0;
+		this.isReady = false;
 	}
 	//Select elements by CSS selectors
 	Mlp.prototype.Select = function(selector, parrent) {
@@ -82,7 +84,10 @@
 
 			message = elem.getElementsByClassName("message")[0],
 			time = elem.getElementsByClassName("time")[0];
+
 		this.player = elem.getElementsByTagName("audio")[0];
+		this.player.volume = (this.option.volume !== undefined) ? this.option.volume : 1;
+
 		this.elems = {
 			"control": [play, stop], //control, maybe need it 
 			"progress": progress,
@@ -95,7 +100,7 @@
 		}
 		if(this.loadCss)
 			this.LoadCss();
-		this.AddEvents();	
+		this.AddEvents();
 	}
 
 	Mlp.prototype.AddEvents = function() {
@@ -110,6 +115,7 @@
 		//Volume logic
 		this.elems.vol_scrub[1].addEventListener("mousedown", this.ScrubberEvents)
 		this.elems.vol_scrub[1].addEventListener("mouseup", this.ScrubberEvents)
+		this.elems.vol_scrub[0].addEventListener("click", this.ScrubberClick)
 	}
 	
 	Mlp.prototype.LoadCss = function(obj) {
@@ -129,13 +135,24 @@
 				var img = new Image();
 				img.src = bg;
 				img.need = el;
+				img.root = this;
+
+				this.loadCount++;
+
 				img.onload = function(e) {
 					var t = e.target;
 					t.need.style.width = t.width;
 					t.need.style.height = t.height;
+					if(--t.root.loadCount == 0)
+						t.root.ready();
 				}
 			}
 		}
+	}
+
+	Mlp.prototype.ready = function() {
+		this.isReady = true;
+		this.render();
 	}
 
 	Mlp.prototype.PlayPause = function(e) {
@@ -186,10 +203,12 @@
 		var scrub = root.elems.vol_scrub[1];
 		var bg = root.elems.vol_scrub[0];
 
-		if(e.buttons == 1) {
+		//if(e.buttons == 1) {
 			bg.addEventListener("mousemove", root.ScrubberMove, false);
 			scrub.addEventListener("mouseup", root.ScrubberMove, false);
-		}
+			root.elems.volume_ctrl.addEventListener("mouseleave", root.ScrubberMove, false);
+		//}
+		return true;
 	};
 
 	Mlp.prototype.ScrubberMove = function(e) {
@@ -197,12 +216,11 @@
 		var scrub = root.elems.vol_scrub[1];
 		var bg = root.elems.vol_scrub[0];
 		var bg_pos = bg.getBoundingClientRect();
-
 		//Holly shit
 		if(e.type == "mouseup" || e.type == "mouseleave") {
-			console.log("Leave");
 			bg.removeEventListener("mousemove", root.ScrubberMove, false);
 			scrub.removeEventListener("mouseup", root.ScrubberMove, false);
+			root.elems.volume_ctrl.removeEventListener("mouseleave", root.ScrubberMove, false);
 		} else {
 			var move = scrub.getBoundingClientRect().left - e.clientX;
 			var left = (scrub.style.left != "") ? scrub.style.left : getStyle(scrub, "left");
@@ -210,7 +228,6 @@
 			var point = left - move;
 
 			if(point > (bg_pos.width - scrub.offsetWidth/2) || point <= 0) {
-				console.log("Leave");
 				bg.removeEventListener("mousemove", root.ScrubberMove, false);
 				scrub.removeEventListener("mouseup", root.ScrubberMove, false);
 			}
@@ -218,12 +235,46 @@
 			if(point > bg_pos.width - scrub.offsetWidth/2) {
 				point = (bg_pos.width - scrub.offsetWidth/2)-4;
 			}
-			scrub.style.left = point;
 
-			var volume = (bg_pos.width * point/50);
-			root.elems.vol_scrub[2].style.width = volume + "%";
-			root.player.volume = volume/100;
+			var volume = (bg_pos.width * point/50)/100;
+			if(volume > 1)
+				volume = 1;
+			if(volume < 0)
+				volume = 0;
+			// root.elems.vol_scrub[2].style.width = volume + "%";
+			root.player.volume = volume;
 		}
+		root.render();
+
+		return true;
+	}
+
+	Mlp.prototype.ScrubberClick = function(e) {
+		var root = Root(this).self;
+
+		if(e.target == root.elems.vol_scrub[1])
+			return true;
+
+		//Hack for old browser
+		e.layerX = e.layerX || e.offsetX;
+
+		var volume = (this.offsetWidth/50 * e.layerX)/100;
+		if(volume > 1)
+			volume = 1;
+		if(volume < 0)
+			volume = 0;
+		root.player.volume = volume;
+		root.render(); 
+
+		return true;
+	}
+
+	Mlp.prototype.render = function() {
+		var bg_pos = this.elems.vol_scrub[0].getBoundingClientRect();
+		var position = (((this.player.volume * 100) * 50) / bg_pos.width);
+
+		this.elems.vol_scrub[2].style.width = (this.player.volume * 100) + "%";	
+		this.elems.vol_scrub[1].style.left = position;
 	}
 
 
