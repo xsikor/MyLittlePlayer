@@ -21,15 +21,30 @@
 }
 
 .mlp-player .body .progress {
+	z-index: 3;
+	cursor: pointer;
 	position: absolute;
 }
 
 .mlp-player .body .loaded {
+	cursor: pointer;
+	position: absolute;
+	z-index: 2;
+}
+
+.mlp-player .body .timeline {
+	cursor: pointer;
 	position: absolute;
 }
 
 .mlp-player .body .time {
 	position: absolute;
+}
+
+.mlp-player .body .time_scroller {
+	position: absolute;
+	cursor: pointer;
+	z-index: 4;
 }
 
 .mlp-player .volume-ctrl {

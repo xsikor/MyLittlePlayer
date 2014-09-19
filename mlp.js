@@ -13,16 +13,11 @@
 	}
 	//Select elements by CSS selectors
 	Mlp.prototype.Select = function(selector, parrent) {
-		var selector = selector || "audio";
+		var selector = selector;
 		var parrent = parrent || document;
-		if(selector[0] == ".") {
-			var element = parrent.getElementsByClassName(selector.slice(1));
-		} else if( selector[0] == "#") {
-			var element = parrent.getElementById(selector.slice(1));
-		} else {
-			var element = parrent.getElementsByTagName(selector);
-		}
-
+		var element = parrent.querySelectorAll(selector);
+		if(selector[0] == "#")
+			element = element[0];
 
 		return element;
 	}
@@ -70,8 +65,12 @@
 			play = control.getElementsByClassName("play")[0],
 			stop = control.getElementsByClassName("stop")[0],
 			
-			progress = elem.getElementsByClassName("progress")[0],
-			loaded = elem.getElementsByClassName("loaded")[0],
+
+			body = elem.getElementsByClassName("body")[0],
+			timeline = elem.getElementsByClassName("timeline")[0],
+			progress = timeline.getElementsByClassName("progress")[0],
+			loaded = timeline.getElementsByClassName("loaded")[0],
+			time_scroller = timeline.getElementsByClassName("time_scroller")[0],
 
 			volume_ctrl = elem.getElementsByClassName("volume-ctrl")[0],
 			ico_muted = volume_ctrl.getElementsByClassName("muted")[0],
@@ -86,11 +85,13 @@
 
 		this.player = elem.getElementsByTagName("audio")[0];
 		this.player.volume = (this.option.volume !== undefined) ? this.option.volume : 1;
+		this.player.root = this;
 
 		this.elems = {
 			"control": [play, stop], //control, maybe need it 
-			"progress": progress,
-			"loaded": loaded,
+			"body": body,
+			"timeline": timeline,
+			"time_scrub": [progress, time_scroller, loaded],
 			"time": time,
 			"volume_ctrl": volume_ctrl,
 			"vol_ico": [ico_unmuted, ico_muted],
@@ -117,6 +118,14 @@
 		this.elems.vol_scrub[1].addEventListener("mousedown", this.ScrubberEvents)
 		this.elems.vol_scrub[1].addEventListener("mouseup", this.ScrubberEvents)
 		this.elems.vol_scrub[0].addEventListener("click", this.ScrubberClick)
+
+		//Timeline logic
+
+		this.elems.timeline.addEventListener("click", this.TimelineClick);
+
+		//Player event's
+		this.player.addEventListener("volumechange", this.render);
+		this.player.addEventListener("timeupdate", this.render);
 	}
 	
 	Mlp.prototype.LoadCss = function(obj) {
@@ -147,6 +156,7 @@
 					if(--t.root.loadCount == 0)
 						t.root.ready();
 				}
+
 			}
 		}
 	}
@@ -247,7 +257,6 @@
 			// root.elems.vol_scrub[2].style.width = volume + "%";
 			root.player.volume = volume;
 		}
-		root.render();
 
 		return true;
 	}
@@ -267,17 +276,54 @@
 		if(volume < 0)
 			volume = 0;
 		root.player.volume = volume;
-		root.render(); 
-
 		return true;
 	}
 
-	Mlp.prototype.render = function() {
-		var bg_pos = this.elems.vol_scrub[0].getBoundingClientRect();
-		var position = (((this.player.volume * 100) * 50) / bg_pos.width);
+	Mlp.prototype.TimelineClick = function(e) {
+		var root = Root(this).self;
 
-		this.elems.vol_scrub[2].style.width = (this.player.volume * 100) + "%";	
-		this.elems.vol_scrub[1].style.left = position;
+		if(e.target == root.elems.time_scrub[1])
+			return true;
+
+		//Hack for old browser
+		e.layerX = e.layerX || e.offsetX;
+		var to_proc = (e.layerX / this.offsetWidth) * root.player.duration;
+		
+		if(root.player.buffered.end(0) >= to_proc)
+			root.player.currentTime =  to_proc;
+	}
+
+
+	Mlp.prototype.render = function() {
+		var root = this;
+		//Още-още плохой костыль TODO
+		if(root.elems == undefined) {
+			root = this.root;
+		}
+
+		//Volume
+		var vol_bg = root.elems.vol_scrub[0].getBoundingClientRect();
+		var position = (((root.player.volume * 100) * 50) / vol_bg.width);
+
+		root.elems.vol_scrub[2].style.width = (root.player.volume * 100) + "%";	
+		root.elems.vol_scrub[1].style.left = position;
+
+		//Timeline
+		var time_proc = root.elems.timeline.offsetWidth;
+		var time_width = "0px";
+		var buffer_width = "0px";
+		if(time_proc > 0 && root.player.duration > 0 && root.player.buffered.length == 1) {
+			var cur_proc = root.player.currentTime / root.player.duration;
+			var time_width = (time_proc * cur_proc) - (parseInt(getStyle(root.elems.time_scrub[0], "left"))*2) + "px";
+			var bufer_proc = root.player.buffered.end(0) / root.player.duration;
+			var buffer_width = (time_proc * bufer_proc) - (parseInt(getStyle(root.elems.time_scrub[2], "left"))*2) + "px";
+		}
+		root.elems.time_scrub[0].style.width = time_width;
+		root.elems.time_scrub[2].style.width = buffer_width;
+		root.elems.time_scrub[1].style.left = root.elems.time_scrub[0].offsetWidth;
+
+		t = toMin(root.player.currentTime);
+		root.elems.time.innerHTML = t.m + ":" + t.s;
 	}
 	//Bad method for add custom element to player
 	Mlp.prototype.addElement = function(option) {
@@ -306,9 +352,12 @@
 			<div class="stop"></div>\
 		</div>\
 		<div class="body">\
-			<div class="progress"></div>\
-			<div class="loaded"></div>\
 			<div class="time"></div>\
+			<div class="timeline">\
+				<div class="progress"></div>\
+				<div class="loaded"></div>\
+				<div class="time_scroller"></div>\
+			</div>\
 		</div>\
 		<div class="volume-ctrl">\
 			<div class="icon">\
@@ -351,6 +400,16 @@
 
 	function Root(el) {
 		return(el.className != "mlp-player" && el.className != "") ? Root(el.parentElement) : el;
+	}
+
+	function toMin(seconds) {
+		var s = Math.floor(seconds);
+		var m = Math.floor(s/60)
+		if(s >= 60)
+			s -= m*60;
+		if(s < 10) 
+			s = "0"+s.toString()
+		return {"m": m, "s": s};
 	}
 
 }).call(this);
