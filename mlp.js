@@ -5,6 +5,7 @@
 		this.option = option || false;
 		this.players = [];
 		this.player = null;
+		this.flashPlayer = null;
 		this.elems = null;
 		this.isOnline = option.isOnline || false;
 		this.preload = option.preload || "none"
@@ -61,7 +62,7 @@
 
 		elem = document.getElementById("mlp-"+count.toString());
 		elem.self = this;
-		//need to remove this shit or meybe not
+		
 		var
 			control = elem.getElementsByClassName("control")[0],
 			play = control.getElementsByClassName("play")[0],
@@ -90,7 +91,7 @@
 
 		this.player = elem.getElementsByTagName("audio")[0];
 		this.player.volume = (this.option.volume !== undefined) ? this.option.volume : 1;
-		this.player.root = this;
+		this.player.type = this.player.getAttribute("type") || "audio/mpeg";
 
 		this.elems = {
 			"control": [play, stop], //control, maybe need it 
@@ -350,11 +351,10 @@
 	}
 
 
-	Mlp.prototype.render = function() {
+	Mlp.prototype.render = function(e) {
 		var root = this;
-
 		if(root.elems == undefined) {
-			root = this.root;
+			root = e.target.parentElement.self;
 		}
 
 		//Volume
@@ -404,6 +404,24 @@
 			this.LoadCss();
 
 		return tmp;
+	}
+
+	Mlp.prototype.initFlash = function() {
+		var flashPlayer = this.addElement({
+			className: "flObj",
+			tagName: "embed"
+		});
+
+		flashPlayer.width = 0;
+		flashPlayer.height = 0;
+		flashPlayer.allowscriptaccess = "always";
+		flashPlayer.src = "mlp.swf";
+
+		this.flashPlayer = flashPlayer;
+	}
+
+	Mlp.prototype.PlayFlash = function() {
+		this.flashPlayer.play();
 	}
 
 
