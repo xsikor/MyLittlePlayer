@@ -10,6 +10,7 @@
 		this.preload = option.preload || "none"
 		this.loadCount = 0;
 		this.isReady = false;
+		this.isDragable = false;
 	}
 	//Select elements by CSS selectors
 	Mlp.prototype.Select = function(selector, parrent) {
@@ -61,7 +62,8 @@
 		elem = document.getElementById("mlp-"+count.toString());
 		elem.self = this;
 		//need to remove this shit or meybe not
-		var control = elem.getElementsByClassName("control")[0],
+		var
+			control = elem.getElementsByClassName("control")[0],
 			play = control.getElementsByClassName("play")[0],
 			stop = control.getElementsByClassName("stop")[0],
 			
@@ -80,8 +82,11 @@
 			vol_scroller = vol_scrub.getElementsByClassName("scroller")[0],
 			vol_fulbar = vol_scrub.getElementsByClassName("full_bar")[0],
 
-			message = elem.getElementsByClassName("message")[0],
 			time = elem.getElementsByClassName("time")[0];
+			cur_time = time.getElementsByClassName("cur_time")[0];
+			duration = time.getElementsByClassName("duration")[0];
+
+			message = elem.getElementsByClassName("message")[0],
 
 		this.player = elem.getElementsByTagName("audio")[0];
 		this.player.volume = (this.option.volume !== undefined) ? this.option.volume : 1;
@@ -93,6 +98,8 @@
 			"timeline": timeline,
 			"time_scrub": [progress, time_scroller, loaded],
 			"time": time,
+			"cur_time": cur_time,
+			"duration": duration,
 			"volume_ctrl": volume_ctrl,
 			"vol_ico": [ico_unmuted, ico_muted],
 			"vol_scrub": [vol_scrub, vol_scroller, vol_fulbar],
@@ -120,8 +127,8 @@
 		this.elems.vol_scrub[0].addEventListener("click", this.ScrubberClick)
 
 		//Timeline logic
-
 		this.elems.timeline.addEventListener("click", this.TimelineClick);
+		this.elems.time_scrub[1].addEventListener("mousedown", this.StartDragTimeScrubber);
 
 		//Player event's
 		this.player.addEventListener("volumechange", this.render);
@@ -146,6 +153,8 @@
 				img.src = bg;
 				img.need = el;
 				img.root = this;
+
+				el.ondragstart = function () {return false;}
 
 				this.loadCount++;
 
@@ -183,13 +192,10 @@
 			}
 		}
 
-		if(isPlay) {
-			hideShow(root.elems.control, true);
-			root.player.pause();
-		} else {
-			hideShow(root.elems.control);
-			root.player.play();
-		}
+		if(isPlay)
+			root.Stop();
+		else
+			root.Play();
 	}
 
 	//For more comfortable api
@@ -198,12 +204,17 @@
 		hideShow(this.elems.control);
 	}
 
+	Mlp.prototype.Stop = function() {
+		this.player.pause();
+		hideShow(this.elems.control, true);	
+	}
+
 	Mlp.prototype.MuteUnmute = function(e) {
 		var root = Root(e.target).self;
 		var isMuted = (e.target.className == "muted") ? false : true;
 		if(isMuted) {
 			root.player.muted = true;
-					hideShow(root.elems.vol_ico);
+			hideShow(root.elems.vol_ico);
 		}
 		else {
 			root.player.muted = false;
@@ -216,11 +227,10 @@
 		var scrub = root.elems.vol_scrub[1];
 		var bg = root.elems.vol_scrub[0];
 
-		//if(e.buttons == 1) {
-			root.elems.volume_ctrl.addEventListener("mousemove", root.ScrubberMove, false);
-			root.elems.volume_ctrl.addEventListener("mouseup", root.ScrubberMove, false);
-			root.elems.volume_ctrl.addEventListener("mouseleave", root.ScrubberMove, false);
-		//}
+		root.elems.volume_ctrl.addEventListener("mousemove", root.ScrubberMove, false);
+		root.elems.volume_ctrl.addEventListener("mouseup", root.ScrubberMove, false);
+		root.elems.volume_ctrl.addEventListener("mouseleave", root.ScrubberMove, false);
+
 		return true;
 	};
 
@@ -229,15 +239,14 @@
 		var scrub = root.elems.vol_scrub[1];
 		var bg = root.elems.vol_scrub[0];
 		var bg_pos = bg.getBoundingClientRect();
-		//Holly shit
+		//Holy shit
 		if(e.type == "mouseup" || e.type == "mouseleave") {
 			root.elems.volume_ctrl.removeEventListener("mousemove", root.ScrubberMove, false);
 			root.elems.volume_ctrl.removeEventListener("mouseup", root.ScrubberMove, false);
 			root.elems.volume_ctrl.removeEventListener("mouseleave", root.ScrubberMove, false);
 		} else {
 			var move = scrub.getBoundingClientRect().left - e.clientX;
-			var left = (scrub.style.left != "") ? scrub.style.left : getStyle(scrub, "left");
-			left = parseInt(left);
+			var left = parseInt((scrub.style.left != "") ? scrub.style.left : getStyle(scrub, "left"));
 			var point = left - move;
 
 			if(point > (bg_pos.width - scrub.offsetWidth/2) || point <= 0) {
@@ -245,16 +254,15 @@
 				root.elems.volume_ctrl.removeEventListener("mouseup", root.ScrubberMove, false);
 			}
 
-			if(point > bg_pos.width - scrub.offsetWidth/2) {
+			if(point > bg_pos.width - scrub.offsetWidth/2)
 				point = (bg_pos.width - scrub.offsetWidth/2)-4;
-			}
 
 			var volume = (bg_pos.width * point/50)/100;
 			if(volume > 1)
 				volume = 1;
 			if(volume < 0)
 				volume = 0;
-			// root.elems.vol_scrub[2].style.width = volume + "%";
+
 			root.player.volume = volume;
 		}
 
@@ -287,16 +295,64 @@
 
 		//Hack for old browser
 		e.layerX = e.layerX || e.offsetX;
-		var to_proc = (e.layerX / this.offsetWidth) * root.player.duration;
+		var toTime = (e.layerX / this.offsetWidth) * root.player.duration;
+		console.log(toTime);
+
+		if(root.player.buffered.end(0) >= toTime)
+			root.player.currentTime =  toTime;
+	}
+
+	Mlp.prototype.StartDragTimeScrubber = function(e) {
+		var root = Root(this).self;
+		root.isDragable = true;
+
+		root.elems.body.addEventListener("mousemove", root.MoveTimeScrubber);
+		root.elems.body.addEventListener("mouseleave", root.StopDragTimeScrubber);
+		root.elems.time_scrub[1].addEventListener("mouseup", root.StopDragTimeScrubber);
+
+		return true;
+	}
+
+	Mlp.prototype.MoveTimeScrubber = function(e) {
+		var
+			root = Root(this).self,
+			scrub = root.elems.time_scrub[1],
+			move = scrub.getBoundingClientRect().left - e.clientX,
+			left = parseInt((scrub.style.left != "") ? scrub.style.left : getStyle(scrub, "left")),
+			point = (left - move) - scrub.offsetWidth/3;
 		
-		if(root.player.buffered.end(0) >= to_proc)
-			root.player.currentTime =  to_proc;
+		if(point >= root.elems.timeline.offsetWidth - scrub.offsetWidth) {
+			point = root.elems.timeline.offsetWidth - scrub.offsetWidth
+			root.StopDragTimeScrubber();
+		} else if(point <= 0)
+			point = 0;
+
+		scrub.style.left = point + "px";
+	}
+
+	Mlp.prototype.StopDragTimeScrubber = function(e) {
+		var 
+			root = Root(this).self,
+			scrub = root.elems.time_scrub[1],
+			timeLine = root.elems.timeline,
+			toTime = (scrub.offsetLeft / timeLine.offsetWidth) * root.player.duration;
+
+		root.elems.body.removeEventListener("mousemove", root.MoveTimeScrubber);
+		root.elems.body.removeEventListener("mouseleave", root.StopDragTimeScrubber);
+		root.elems.time_scrub[1].removeEventListener("mouseup", root.StopDragTimeScrubber);
+
+		if(!isNaN(toTime))
+			root.player.currentTime = toTime;
+
+		root.isDragable = false;
+		root.render();
+		return false;
 	}
 
 
 	Mlp.prototype.render = function() {
 		var root = this;
-		//Още-още плохой костыль TODO
+
 		if(root.elems == undefined) {
 			root = this.root;
 		}
@@ -320,24 +376,29 @@
 		}
 		root.elems.time_scrub[0].style.width = time_width;
 		root.elems.time_scrub[2].style.width = buffer_width;
-		root.elems.time_scrub[1].style.left = root.elems.time_scrub[0].offsetWidth;
 
-		t = toMin(root.player.currentTime);
-		root.elems.time.innerHTML = t.m + ":" + t.s;
+		if(root.isDragable == false)
+			root.elems.time_scrub[1].style.left = root.elems.time_scrub[0].offsetWidth;
+
+		var t = toMin(root.player.currentTime);
+		var d = toMin(root.player.duration);
+
+		root.elems.cur_time.innerHTML = t.m + ":" + t.s;
+		root.elems.duration.innerHTML = d.m + ":" + d.s;
 	}
-	//Bad method for add custom element to player
+
 	Mlp.prototype.addElement = function(option) {
 		if(option == undefined)
 			return false;
 		
 		var className = option.className
-		var parrent = option.parrent || this.elems.root;
+		var parent = option.parent || this.elems.root;
 		var tagName = option.tagName || "div"
 
 		var tmp = document.createElement(tagName);
 		tmp.setAttribute("class", className);
 		this.elems[className] = tmp;
-		parrent.appendChild(tmp);
+		parent.appendChild(tmp);
 
 		if(this.option.loadCss)
 			this.LoadCss();
@@ -352,7 +413,10 @@
 			<div class="stop"></div>\
 		</div>\
 		<div class="body">\
-			<div class="time"></div>\
+			<div class="time">\
+				<div class="cur_time"></div>\
+				<div class="duration"></div>\
+			</div>\
 			<div class="timeline">\
 				<div class="progress"></div>\
 				<div class="loaded"></div>\
@@ -372,7 +436,7 @@
 		<div class="message"></div>';
 
 
-//My function's
+
 	function getStyle(elem, option) {
 		var option = option || false;
 		if(typeof elem != "object")
@@ -403,6 +467,9 @@
 	}
 
 	function toMin(seconds) {
+		if(isNaN(seconds))
+			seconds = 0;
+
 		var s = Math.floor(seconds);
 		var m = Math.floor(s/60)
 		if(s >= 60)

@@ -1,5 +1,11 @@
 .mlp-player {
 	position: relative;
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	-khtml-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
 }
 
 .mlp-player .control {
@@ -38,6 +44,14 @@
 }
 
 .mlp-player .body .time {
+	position: absolute;
+}
+
+.mlp-player .body .time .cur_time {
+	position: absolute;
+}
+
+.mlp-player .body .time .duration {
 	position: absolute;
 }
 
