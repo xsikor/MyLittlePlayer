@@ -112,6 +112,9 @@
 			this.LoadCss();
 
 		this.AddEvents();
+
+		if(mlp.player.canPlayType(mlp.player.type) == "")
+			this.initFlash();
 	}
 
 	Mlp.prototype.AddEvents = function() {
@@ -224,12 +227,18 @@
 
 	//For more comfortable api
 	Mlp.prototype.Play = function() {
-		this.player.play();
+		if(this.flashPlayer)
+			this.flashPlayer.play();
+		else
+			this.player.play();
 		hideShow(this.elems.control);
 	}
 
 	Mlp.prototype.Stop = function() {
-		this.player.pause();
+		if(this.flashPlayer)
+			(this.isOnline) ? this.flashPlayer.stop() : this.flashPlayer.pause();
+		else
+			this.player.pause();
 		hideShow(this.elems.control, true);	
 	}
 
@@ -320,7 +329,6 @@
 		//Hack for old browser
 		e.layerX = e.layerX || e.offsetX;
 		var toTime = (e.layerX / this.offsetWidth) * root.player.duration;
-		console.log(toTime);
 
 		if(root.player.buffered.end(0) >= toTime)
 			root.player.currentTime =  toTime;
@@ -379,7 +387,7 @@
 		if(root.elems == undefined) {
 			root = e.target.parentElement.self;
 		}
-
+		console.log("render");
 		//Volume
 		var vol_bg = root.elems.vol_scrub[0].getBoundingClientRect();
 		var position = (((root.player.volume * 100) * 50) / vol_bg.width);
@@ -437,9 +445,15 @@
 
 		flashPlayer.width = 0;
 		flashPlayer.height = 0;
-		flashPlayer.allowscriptaccess = "always";
-		flashPlayer.src = "mlp.swf";
+		flashPlayer.setAttribute("AllowScriptAccess", "always");
+		flashPlayer.src = "mlp.swf?id=mlp_flash_"+count;
+		flashPlayer.id = "mlp_flash_"+count;
 
+		flashPlayer.ready = function() {
+			var root = Root(this).self
+			this.init(root.player.src);
+			console.log(this.id, "init");
+		}
 		this.flashPlayer = flashPlayer;
 	}
 

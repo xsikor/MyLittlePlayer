@@ -14,6 +14,7 @@
 		public var trans:SoundTransform = 	new SoundTransform();
 		public var is_playing:Boolean = false;
 		public var channel:URLRequest;
+		public var position:int = 0;
 		
 		public var flv:Boolean;
 		public var flv_stream:NetConnection = new NetConnection(); 
@@ -31,22 +32,30 @@
 			if(st.indexOf(".flv") != -1) {
 				this.flv = true;
 			} else {
-				channel = new URLRequest(st);
+				this.channel = new URLRequest(st);
 			}
+			this.position = 0;
 		}
 		
 		public function Play():void {
 			is_playing = true;
 			trace("Playing", this.stream_url);
 			if(this.flv == true) {
-				this.flv_sound = new NetStream(this.flv_stream);
-				this.flv_sound.bufferTime = 5;
-				this.flv_sound.addEventListener(AsyncErrorEvent.ASYNC_ERROR, this.pass);
-				this.flv_sound.play(this.stream_url);
+				if(this.position == 0) {
+					this.flv_sound = new NetStream(this.flv_stream);
+					this.flv_sound.bufferTime = 5;
+					this.flv_sound.addEventListener(AsyncErrorEvent.ASYNC_ERROR, this.pass);
+					this.flv_sound.play(this.stream_url);
+				} else {
+					this.flv_sound.play();
+				}
 			} else {
 				this.stream = new Sound();
 				this.stream.load(this.channel);
-				this.sound = this.stream.play();
+				if(this.position == 0)
+					this.sound = this.stream.play();
+				else
+					this.sound = this.stream.play(this.position);
 			}
 		}
 		
@@ -55,6 +64,17 @@
 			if(this.flv == true) {
 				this.flv_sound.close();
 			} else {
+				this.sound.stop();
+			}
+		}
+		
+		public function Pause():void {
+			is_playing = false;
+			if(this.flv == true) {
+				this.position = 1;
+				this.flv_sound.pause();
+			} else {
+				this.position = this.sound.position;
 				this.sound.stop();
 			}
 		}
@@ -68,7 +88,7 @@
 			else
 				this.sound.soundTransform = this.trans;
 		}
-		
+				
 		private function pass(e):void {}
 	
 	}
