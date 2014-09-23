@@ -191,8 +191,10 @@
 					url = url.slice(start, stop),
 					href = (url[0] == "/") ? "http://"+window.location.host : window.location.href,
 					img = new Image();
-
-				img.src = href+url;
+				if(url.indexOf("http://") != -1)
+					img.src = url;
+				else
+					img.src = href+url;
 			}
 		}
 	}
