@@ -204,6 +204,7 @@
 		if(this.option.autoPlay)
 			this.Play();
 		this.render();
+		this.elems.root.style.display = "block";
 	}
 
 	Mlp.prototype.PlayPause = function(e) {
