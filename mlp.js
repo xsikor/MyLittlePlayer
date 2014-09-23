@@ -26,6 +26,7 @@
 
 	Mlp.prototype.Create = function(elems) {
 		var elems = elems || "audio";
+		this.loadImages();
 
 		if(typeof elems == "string") {
 			elems = this.Select(elems);
@@ -167,6 +168,28 @@
 						t.root.ready();
 				}
 
+			}
+		}
+	}
+
+	//Some shit for load all images together
+	Mlp.prototype.loadImages = function() {
+		var styles = document.styleSheets;
+		for(i in styles) {
+			var rules = styles[i].cssRules;
+			for(j in rules) {
+				var rule = rules[j], selector = rule.selectorText;
+				if(rule.style == undefined || rule.style.background == "" || selector.indexOf("mlp-player") == -1)
+					continue;
+				var 
+					url = rule.style.background,
+					start = url.indexOf("url(\"")+5,
+					stop = url.indexOf("\")", start),
+					url = url.slice(start, stop),
+					href = (url[0] == "/") ? "http://"+window.location.host : window.location.href,
+					img = new Image();
+
+				img.src = href+url;
 			}
 		}
 	}
