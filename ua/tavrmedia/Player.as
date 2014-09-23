@@ -54,8 +54,10 @@
 				this.stream.load(this.channel);
 				if(this.position == 0)
 					this.sound = this.stream.play();
-				else
-					this.sound = this.stream.play(this.position);
+				else {
+					//trace(this.position);
+					this.sound = this.stream.play(this.position*1000);
+				}
 			}
 		}
 		
@@ -70,11 +72,10 @@
 		
 		public function Pause():void {
 			is_playing = false;
+			this.position = this.getPosition();
 			if(this.flv == true) {
-				this.position = 1;
 				this.flv_sound.pause();
 			} else {
-				this.position = this.sound.position;
 				this.sound.stop();
 			}
 		}
@@ -87,6 +88,25 @@
 				this.flv_sound.soundTransform = this.trans;
 			else
 				this.sound.soundTransform = this.trans;
+		}
+		
+		public function getPosition():Number {
+			if(this.flv == true) {
+				return this.flv_sound.time;
+			} else {
+				return this.sound.position/1000;
+			}
+		}
+		
+		public function setPosition(x:Number):Number {
+			if(this.flv == true) {
+				this.flv_sound.seek(x);
+			} else {
+				this.Stop();
+				this.position = x;
+				this.Play();
+			}
+			return x;
 		}
 				
 		private function pass(e):void {}

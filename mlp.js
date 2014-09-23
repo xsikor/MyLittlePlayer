@@ -330,8 +330,10 @@
 		e.layerX = e.layerX || e.offsetX;
 		var toTime = (e.layerX / this.offsetWidth) * root.player.duration;
 
-		if(root.player.buffered.end(0) >= toTime)
+		if(root.totalBuffer() >= toTime)
 			root.player.currentTime =  toTime;
+		if(root.flashPlayer)
+			root.flashPlayer.position(toTime);
 	}
 
 	Mlp.prototype.StartDragTimeScrubber = function(e) {
@@ -387,7 +389,7 @@
 		if(root.elems == undefined) {
 			root = e.target.parentElement.self;
 		}
-		console.log("render");
+		
 		//Volume
 		var vol_bg = root.elems.vol_scrub[0].getBoundingClientRect();
 		var position = (((root.player.volume * 100) * 50) / vol_bg.width);
@@ -399,11 +401,14 @@
 		var time_proc = root.elems.timeline.offsetWidth;
 		var time_width = "0px";
 		var buffer_width = "0px";
-		if(time_proc > 0 && root.player.duration > 0 && root.player.buffered.length == 1) {
+		
+		if(time_proc > 0 && root.player.duration > 0 && root.totalBuffer() != 0) {
 			var cur_proc = root.player.currentTime / root.player.duration;
 			var time_width = (time_proc * cur_proc) - (parseInt(getStyle(root.elems.time_scrub[0], "left"))*2) + "px";
-			var bufer_proc = root.player.buffered.end(0) / root.player.duration;
+			var bufer_proc = root.totalBuffer() / root.player.duration;
 			var buffer_width = (time_proc * bufer_proc) - (parseInt(getStyle(root.elems.time_scrub[2], "left"))*2) + "px";
+
+
 		}
 		root.elems.time_scrub[0].style.width = time_width;
 		root.elems.time_scrub[2].style.width = buffer_width;
@@ -416,6 +421,16 @@
 
 		root.elems.cur_time.innerHTML = t.m + ":" + t.s;
 		root.elems.duration.innerHTML = d.m + ":" + d.s;
+	}
+
+	Mlp.prototype.totalBuffer = function() {
+		var buff = 0;
+		if(this.flashPlayer) {
+			buff = this.flashPlayer.buffered();
+		} else if(this.player.buffered.length != 0) {
+			buff = this.player.buffered.end(0) || 0;
+		}
+		return buff;
 	}
 
 	Mlp.prototype.addElement = function(option) {
@@ -448,17 +463,28 @@
 		flashPlayer.setAttribute("AllowScriptAccess", "always");
 		flashPlayer.src = "mlp.swf?id=mlp_flash_"+count;
 		flashPlayer.id = "mlp_flash_"+count;
+		flashPlayer.tmp_durration = 0;
 
 		flashPlayer.ready = function() {
 			var root = Root(this).self
 			this.init(root.player.src);
 			console.log(this.id, "init");
+			root.player = {};
 		}
-		this.flashPlayer = flashPlayer;
-	}
 
-	Mlp.prototype.PlayFlash = function() {
-		this.flashPlayer.play();
+		flashPlayer.timeupdate = function() {
+			var
+				root = Root(this).self,
+				duration = (this.buffered() > this.tmp_durration) ? this.buffered() : this.tmp_durration;
+
+			this.tmp_durration = duration;
+			root.player.currentTime = this.position();
+			root.player.volume = this.volume();
+			root.player.duration = this.tmp_durration;
+			root.render();
+		}
+
+		this.flashPlayer = flashPlayer;
 	}
 
 
