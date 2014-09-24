@@ -505,7 +505,7 @@
 		flashPlayer.width = 0;
 		flashPlayer.height = 0;
 		flashPlayer.setAttribute("AllowScriptAccess", "always");
-		flashPlayer.src = "mlp.swf?id=mlp_flash_"+count;
+		flashPlayer.src = Path("mlp.js")+"mlp.swf?id=mlp_flash_"+count;
 		flashPlayer.id = "mlp_flash_"+count;
 		flashPlayer.tmp_durration = 0;
 
@@ -604,6 +604,16 @@
 		if(s < 10) 
 			s = "0"+s.toString()
 		return {"m": m, "s": s};
+	}
+
+	function Path(str) {
+		var elems = document.getElementsByTagName("script");
+		for(var i =0; i<elems.length; i++) {
+			var path = elems[i].src;
+			if(path.indexOf("/"+str) != -1)
+				break;
+		}
+		return path.replace(str, "");
 	}
 
 }).call(this);
