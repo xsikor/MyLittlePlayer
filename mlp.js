@@ -281,7 +281,7 @@
 
 		root.elems.volume_ctrl.addEventListener("mousemove", root.ScrubberMove, false);
 		root.elems.volume_ctrl.addEventListener("mouseup", root.ScrubberMove, false);
-		root.elems.volume_ctrl.addEventListener("mouseleave", root.ScrubberMove, false);
+		//root.elems.volume_ctrl.addEventListener("mouseleave", root.ScrubberMove, false);
 
 		return true;
 	};
@@ -295,7 +295,7 @@
 		if(e.type == "mouseup" || e.type == "mouseleave") {
 			root.elems.volume_ctrl.removeEventListener("mousemove", root.ScrubberMove, false);
 			root.elems.volume_ctrl.removeEventListener("mouseup", root.ScrubberMove, false);
-			root.elems.volume_ctrl.removeEventListener("mouseleave", root.ScrubberMove, false);
+			//root.elems.volume_ctrl.removeEventListener("mouseleave", root.ScrubberMove, false);
 		} else {
 			var move = scrub.getBoundingClientRect().left - e.clientX;
 			var left = parseInt((scrub.style.left != "") ? scrub.style.left : getStyle(scrub, "left"));
@@ -497,6 +497,10 @@
 	}
 
 	Mlp.prototype.initFlash = function() {
+
+		if(this.flashPlayer)
+			return false;
+
 		var flashPlayer = this.addElement({
 			className: "flObj",
 			tagName: "embed"
@@ -514,6 +518,8 @@
 
 			this.init(root.player.src);
 			console.log(this.id, "init");
+			vol = (root.option.volume !== undefined) ? root.option.volume : 1;
+			this.volume(vol);
 			root.player = {};
 		}
 
