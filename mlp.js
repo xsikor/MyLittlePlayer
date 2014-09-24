@@ -297,19 +297,20 @@
 			root.elems.volume_ctrl.removeEventListener("mouseup", root.ScrubberMove, false);
 			//root.elems.volume_ctrl.removeEventListener("mouseleave", root.ScrubberMove, false);
 		} else {
-			var move = scrub.getBoundingClientRect().left - e.clientX;
+			var move = (scrub.getBoundingClientRect().left - e.clientX);
 			var left = parseInt((scrub.style.left != "") ? scrub.style.left : getStyle(scrub, "left"));
 			var point = left - move;
-
-			if(point > (bg_pos.width - scrub.offsetWidth/2) || point <= 0) {
+			if(point > (bg_pos.width) || point <= 0) {
 				root.elems.volume_ctrl.removeEventListener("mousemove", root.ScrubberMove, false);
 				root.elems.volume_ctrl.removeEventListener("mouseup", root.ScrubberMove, false);
 			}
 
-			if(point > bg_pos.width - scrub.offsetWidth/2)
-				point = (bg_pos.width - scrub.offsetWidth/2)-4;
+			if(point > bg_pos.width)
+				point = (bg_pos.width);
 
-			var volume = (bg_pos.width * point/50)/100;
+
+			var volume = (point / bg_pos.width);
+
 			if(volume > 1)
 				volume = 1;
 			if(volume < 0)
@@ -342,7 +343,7 @@
 		//Hack for old browser
 		e.layerX = e.layerX || e.offsetX;
 
-		var volume = (this.offsetWidth/50 * e.layerX)/100;
+		var volume = (e.layerX / this.offsetWidth);
 		if(volume > 1)
 			volume = 1;
 		if(volume < 0)
@@ -437,7 +438,7 @@
 		
 		//Volume
 		var vol_bg = root.elems.vol_scrub[0].getBoundingClientRect();
-		var position = (((root.player.volume * 100) * 50) / vol_bg.width);
+		var position = (root.player.volume * vol_bg.width) - root.elems.vol_scrub[1].offsetWidth/2;
 
 		root.elems.vol_scrub[2].style.width = (root.player.volume * 100) + "%";	
 		root.elems.vol_scrub[1].style.left = position;
