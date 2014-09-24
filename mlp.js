@@ -26,12 +26,11 @@
 
 	Mlp.prototype.Create = function(elems) {
 		var elems = elems || "audio";
-		this.loadImages();
 
 		if(typeof elems == "string") {
-			elems = this.Select(elems);
+			var elems = this.Select(elems);
 		}
-
+		this.loadImages();
 		if(elems.length == undefined) {
 			this.createHelper(elems);
 			return true;
@@ -44,7 +43,8 @@
 				continue;
 
 			var tmp = new Mlp(this.option);
-			tmp.Create(elems[i], i);
+			tmp.Create(elems[i]);
+
 			this.players.push(tmp);
 				
 		}
@@ -55,7 +55,7 @@
 			return false
 		elem.preload = this.preload;
 		var tmp = document.createElement('div');
-		tmp.setAttribute("class", "mlp-player");
+		tmp.setAttribute("class", "mlp-player "+elem.className);
 		tmp.setAttribute("id", "mlp-"+(++count).toString());
 		tmp.appendChild(elem.cloneNode(true));
 		tmp.innerHTML += this.markup;
@@ -113,7 +113,7 @@
 
 		this.AddEvents();
 
-		if(mlp.player.canPlayType(mlp.player.type) == "")
+		if(this.player.canPlayType(this.player.type) == "")
 			this.initFlash();
 	}
 
@@ -178,12 +178,13 @@
 	//Some shit for load all images together
 	Mlp.prototype.loadImages = function() {
 		var styles = document.styleSheets;
-		for(i in styles) {
+		for(var i=0; i<styles.length; i++) {
 			var rules = styles[i].cssRules;
-			for(j in rules) {
+			for(var j in rules) {
 				var rule = rules[j], selector = rule.selectorText;
 				if(rule.style == undefined || rule.style.background == "" || selector.indexOf("mlp-player") == -1)
 					continue;
+
 				var 
 					url = rule.style.background,
 					start = url.indexOf("url(\"")+5,
@@ -191,6 +192,7 @@
 					url = url.slice(start, stop),
 					href = (url[0] == "/") ? "http://"+window.location.host : window.location.href,
 					img = new Image();
+
 				if(url.indexOf("http://") != -1)
 					img.src = url;
 				else
@@ -203,15 +205,18 @@
 		this.isReady = true;
 		if(this.option.autoPlay)
 			this.Play();
-		this.render();
 		this.elems.root.style.display = "block";
+
+		this.render();
+
 	}
 
 	Mlp.prototype.PlayPause = function(e) {
 		//If click class is play - start playing
 		var root = Root(e.target).self;
 		var isPlay = (e.target.className == "play") ? false : true;
-		if(root.isOnline) {
+
+		if(root.isOnline && !root.flashPlayer) {
 			var src = root.player.src;
 			var date = new Date();
 			if(src.indexOf("cache") == -1) {
@@ -248,14 +253,25 @@
 	Mlp.prototype.MuteUnmute = function(e) {
 		var root = Root(e.target).self;
 		var isMuted = (e.target.className == "muted") ? false : true;
-		if(isMuted) {
-			root.player.muted = true;
-			hideShow(root.elems.vol_ico);
-		}
-		else {
-			root.player.muted = false;
-			hideShow(root.elems.vol_ico, true);
-		}
+		if(isMuted)
+			root.Mute();
+		else
+			root.Unmute();
+	}
+
+	Mlp.prototype.Mute = function() {
+		this.player.tmp_vol = this.player.volume;
+		if(this.flashPlayer)
+			this.flashPlayer.mute(true);
+		this.player.volume = 0;
+		hideShow(this.elems.vol_ico);
+	}
+
+	Mlp.prototype.Unmute = function() {
+		this.player.volume = this.player.tmp_vol || this.player.volume;
+		if(this.flashPlayer)
+			this.flashPlayer.mute(false);
+		hideShow(this.elems.vol_ico, true);
 	}
 
 	Mlp.prototype.ScrubberEvents = function(e) {
@@ -299,7 +315,19 @@
 			if(volume < 0)
 				volume = 0;
 
+			if(volume > 0)
+				root.Unmute();
+			else
+				root.Mute();
+
 			root.player.volume = volume;
+
+			if(root.flashPlayer)
+				root.flashPlayer.volume(volume);
+
+
+			root.render();
+
 		}
 
 		return true;
@@ -319,7 +347,16 @@
 			volume = 1;
 		if(volume < 0)
 			volume = 0;
+
+		if(volume > 0)
+			root.Unmute();
+		else
+			root.Mute();
+
 		root.player.volume = volume;
+		if(root.flashPlayer)
+			root.flashPlayer.volume(volume);
+
 		return true;
 	}
 
@@ -332,6 +369,7 @@
 		//Hack for old browser
 		e.layerX = e.layerX || e.offsetX;
 		var toTime = (e.layerX / this.offsetWidth) * root.player.duration;
+
 
 		if(root.totalBuffer() >= toTime)
 			root.player.currentTime =  toTime;
@@ -378,8 +416,12 @@
 		root.elems.body.removeEventListener("mouseleave", root.StopDragTimeScrubber);
 		root.elems.time_scrub[1].removeEventListener("mouseup", root.StopDragTimeScrubber);
 
-		if(!isNaN(toTime))
+		if(!isNaN(toTime)) {
 			root.player.currentTime = toTime;
+
+			if(root.flashPlayer)
+				root.flashPlayer.position(toTime);
+		}
 
 		root.isDragable = false;
 		root.render();
@@ -408,9 +450,8 @@
 		if(time_proc > 0 && root.player.duration > 0 && root.totalBuffer() != 0) {
 			var cur_proc = root.player.currentTime / root.player.duration;
 			var time_width = (time_proc * cur_proc) - (parseInt(getStyle(root.elems.time_scrub[0], "left"))*2) + "px";
-			var bufer_proc = root.totalBuffer() / root.player.duration;
+			var bufer_proc = (this.flashPlayer) ? root.totalBuffer() : root.totalBuffer() / root.player.duration;
 			var buffer_width = (time_proc * bufer_proc) - (parseInt(getStyle(root.elems.time_scrub[2], "left"))*2) + "px";
-
 
 		}
 		root.elems.time_scrub[0].style.width = time_width;
@@ -429,7 +470,7 @@
 	Mlp.prototype.totalBuffer = function() {
 		var buff = 0;
 		if(this.flashPlayer) {
-			buff = this.flashPlayer.buffered();
+			buff = this.flashPlayer.totalLoaded();
 		} else if(this.player.buffered.length != 0) {
 			buff = this.player.buffered.end(0) || 0;
 		}
@@ -469,7 +510,8 @@
 		flashPlayer.tmp_durration = 0;
 
 		flashPlayer.ready = function() {
-			var root = Root(this).self
+			var root = Root(this).self;
+
 			this.init(root.player.src);
 			console.log(this.id, "init");
 			root.player = {};
@@ -484,6 +526,7 @@
 			root.player.currentTime = this.position();
 			root.player.volume = this.volume();
 			root.player.duration = this.tmp_durration;
+			root.player.muted = (this.volume() > 0) ? false : true;
 			root.render();
 		}
 
@@ -547,7 +590,7 @@
 	}
 
 	function Root(el) {
-		return(el.className != "mlp-player" && el.className != "") ? Root(el.parentElement) : el;
+		return(el.className.indexOf("mlp-player") == -1 && el.parentElement != null) ? Root(el.parentElement) : el;
 	}
 
 	function toMin(seconds) {
