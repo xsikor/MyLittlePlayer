@@ -1,5 +1,7 @@
 (function() {
 	var count = 0;
+	var cssLoaded = false;
+
 	Mlp = function (option) {
 		console.log("MyLittlePlayer init", count);
 		this.option = option || false;
@@ -142,6 +144,15 @@
 	
 	Mlp.prototype.LoadCss = function(obj) {
 		var obj = obj || this.elems
+
+		if(cssLoaded == false) {
+			tmp = document.createElement("link");
+			tmp.href = Path("mlp.js")+"mlp.css";
+			tmp.rel = "stylesheet";
+			tmp.type = "text/css";
+			document.getElementsByTagName("head")[0].appendChild(tmp);
+		}
+
 		for(k in obj) {
 			var el = obj[k];
 			if(el.length != undefined) {
@@ -153,7 +164,7 @@
 				continue;
 
 			bg = bg.slice(bg.indexOf("http"), bg.indexOf('")'))
-			if(bg.length > 5) {
+			if(bg.length > 5) {				
 				var img = new Image();
 				img.src = bg;
 				img.need = el;
@@ -165,8 +176,10 @@
 
 				img.onload = function(e) {
 					var t = e.target;
-					t.need.style.width = t.width;
-					t.need.style.height = t.height;
+					
+					t.need.style.width = t.width+"px";
+					t.need.style.height = t.height+"px";
+
 					if(--t.root.loadCount == 0)
 						t.root.ready();
 				}
@@ -182,7 +195,8 @@
 			var rules = styles[i].cssRules;
 			for(var j in rules) {
 				var rule = rules[j], selector = rule.selectorText;
-				if(rule.style == undefined || rule.style.background == "" || selector.indexOf("mlp-player") == -1)
+
+				if(rule.style == undefined || selector == undefined || rule.style.background == "" || selector.indexOf("mlp-player") == -1)
 					continue;
 
 				var 
@@ -203,7 +217,7 @@
 
 	Mlp.prototype.ready = function() {
 		this.isReady = true;
-		if(this.option.autoPlay)
+		if(this.option.autoPlay && this.flashPlayer == null)
 			this.Play();
 		this.elems.root.style.display = "block";
 
@@ -216,17 +230,6 @@
 		var root = Root(e.target).self;
 		var isPlay = (e.target.className == "play") ? false : true;
 
-		if(root.isOnline && !root.flashPlayer) {
-			var src = root.player.src;
-			var date = new Date();
-			if(src.indexOf("cache") == -1) {
-				root.player.src = src+"?cache="+date.getTime();
-			} else {
-				src = src.slice(0, src.indexOf("?cache"));
-				root.player.src = src+"?cache="+date.getTime();
-			}
-		}
-
 		if(isPlay)
 			root.Stop();
 		else
@@ -235,10 +238,21 @@
 
 	//For more comfortable api
 	Mlp.prototype.Play = function() {
-		if(this.flashPlayer)
+		if(this.flashPlayer && this.flashPlayer != null)
 			this.flashPlayer.play();
-		else
+		else {
+			if(this.isOnline) {
+				var src = this.player.src;
+				var date = new Date();
+				if(src.indexOf("cache") == -1) {
+					this.player.src = src+"?cache="+date.getTime();
+				} else {
+					src = src.slice(0, src.indexOf("?cache"));
+					this.player.src = src+"?cache="+date.getTime();
+				}
+			}
 			this.player.play();
+		}
 		hideShow(this.elems.control);
 	}
 
@@ -281,13 +295,15 @@
 
 		root.elems.volume_ctrl.addEventListener("mousemove", root.ScrubberMove, false);
 		root.elems.volume_ctrl.addEventListener("mouseup", root.ScrubberMove, false);
-		//root.elems.volume_ctrl.addEventListener("mouseleave", root.ScrubberMove, false);
+		document.addEventListener("mouseup", root.ScrubberMove, false);
+		document.currMlp = root;
 
 		return true;
 	};
 
+
 	Mlp.prototype.ScrubberMove = function(e) {
-		var root = Root(this).self;
+		var root = Root(this).self || document.currMlp;
 		var scrub = root.elems.vol_scrub[1];
 		var bg = root.elems.vol_scrub[0];
 		var bg_pos = bg.getBoundingClientRect();
@@ -295,7 +311,7 @@
 		if(e.type == "mouseup" || e.type == "mouseleave") {
 			root.elems.volume_ctrl.removeEventListener("mousemove", root.ScrubberMove, false);
 			root.elems.volume_ctrl.removeEventListener("mouseup", root.ScrubberMove, false);
-			//root.elems.volume_ctrl.removeEventListener("mouseleave", root.ScrubberMove, false);
+			document.removeEventListener("mouseup", root.ScrubberMove, false);
 		} else {
 			var move = (scrub.getBoundingClientRect().left - e.clientX);
 			var left = parseInt((scrub.style.left != "") ? scrub.style.left : getStyle(scrub, "left"));
@@ -441,7 +457,7 @@
 		var position = (root.player.volume * vol_bg.width) - root.elems.vol_scrub[1].offsetWidth/2;
 
 		root.elems.vol_scrub[2].style.width = (root.player.volume * 100) + "%";	
-		root.elems.vol_scrub[1].style.left = position;
+		root.elems.vol_scrub[1].style.left = position+"px";
 
 		//Timeline
 		var time_proc = root.elems.timeline.offsetWidth;
@@ -516,12 +532,13 @@
 
 		flashPlayer.ready = function() {
 			var root = Root(this).self;
-
 			this.init(root.player.src);
 			console.log(this.id, "init");
 			vol = (root.option.volume !== undefined) ? root.option.volume : 1;
 			this.volume(vol);
 			root.player = {};
+			if(root.option.autoPlay)
+				root.Play();
 		}
 
 		flashPlayer.timeupdate = function() {
@@ -597,7 +614,7 @@
 	}
 
 	function Root(el) {
-		return(el.className.indexOf("mlp-player") == -1 && el.parentElement != null) ? Root(el.parentElement) : el;
+		return(el.className != undefined && el.className.indexOf("mlp-player") == -1 && el.parentElement != null) ? Root(el.parentElement) : el;
 	}
 
 	function toMin(seconds) {

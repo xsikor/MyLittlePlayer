@@ -20,6 +20,7 @@
 
 .mlp-player .control .stop {
 	position: absolute;
+	display: none;
 }
 
 
@@ -84,8 +85,6 @@
 .mlp-player .volume-ctrl .scrubber .scroller {
 	position: absolute;
 	z-index: 2;
-	left: 40%;
-	top: -35%;
 }
 
 
