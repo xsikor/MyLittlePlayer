@@ -1,7 +1,7 @@
 (function() {
 	var count = 0;
 	var cssLoaded = false;
-
+	loadImages();
 	Mlp = function (option) {
 		console.log("MyLittlePlayer init", count);
 		this.option = option || false;
@@ -32,7 +32,6 @@
 		if(typeof elems == "string") {
 			var elems = this.Select(elems);
 		}
-		this.loadImages();
 		if(elems.length == undefined) {
 			this.createHelper(elems);
 			return true;
@@ -188,33 +187,6 @@
 		}
 	}
 
-	//Some shit for load all images together
-	Mlp.prototype.loadImages = function() {
-		var styles = document.styleSheets;
-		for(var i=0; i<styles.length; i++) {
-			var rules = styles[i].cssRules;
-			for(var j in rules) {
-				var rule = rules[j], selector = rule.selectorText;
-
-				if(rule.style == undefined || selector == undefined || rule.style.background == "" || selector.indexOf("mlp-player") == -1)
-					continue;
-
-				var 
-					url = rule.style.background,
-					start = url.indexOf("url(\"")+5,
-					stop = url.indexOf("\")", start),
-					url = url.slice(start, stop),
-					href = (url[0] == "/") ? "http://"+window.location.host : window.location.href,
-					img = new Image();
-
-				if(url.indexOf("http://") != -1)
-					img.src = url;
-				else
-					img.src = href+url;
-			}
-		}
-	}
-
 	Mlp.prototype.ready = function() {
 		this.isReady = true;
 		if(this.option.autoPlay && this.flashPlayer == null)
@@ -298,7 +270,7 @@
 		document.addEventListener("mouseup", root.ScrubberMove, false);
 		document.currMlp = root;
 
-		return true;
+		return false;
 	};
 
 
@@ -347,14 +319,14 @@
 
 		}
 
-		return true;
+		return false;
 	}
 
 	Mlp.prototype.ScrubberClick = function(e) {
 		var root = Root(this).self;
 
 		if(e.target == root.elems.vol_scrub[1])
-			return true;
+			return false;
 
 		//Hack for old browser
 		e.layerX = e.layerX || e.offsetX;
@@ -374,14 +346,14 @@
 		if(root.flashPlayer)
 			root.flashPlayer.volume(volume);
 
-		return true;
+		return false;
 	}
 
 	Mlp.prototype.TimelineClick = function(e) {
 		var root = Root(this).self;
 
 		if(e.target == root.elems.time_scrub[1])
-			return true;
+			return false;
 
 		//Hack for old browser
 		e.layerX = e.layerX || e.offsetX;
@@ -402,7 +374,7 @@
 		root.elems.body.addEventListener("mouseleave", root.StopDragTimeScrubber);
 		root.elems.time_scrub[1].addEventListener("mouseup", root.StopDragTimeScrubber);
 
-		return true;
+		return false;
 	}
 
 	Mlp.prototype.MoveTimeScrubber = function(e) {
@@ -420,6 +392,8 @@
 			point = 0;
 
 		scrub.style.left = point + "px";
+		
+		return false;
 	}
 
 	Mlp.prototype.StopDragTimeScrubber = function(e) {
@@ -638,6 +612,34 @@
 				break;
 		}
 		return path.replace(str, "");
+	}
+
+	//Some shit for load all images together
+	function loadImages() {
+		var styles = document.styleSheets;
+		for(var i=0; i<styles.length; i++) {
+			console.log(styles[i]);
+			var rules = styles[i].cssRules;
+			for(var j in rules) {
+				var rule = rules[j], selector = rule.selectorText;
+
+				if(rule.style == undefined || selector == undefined || rule.style.background == "" || selector.indexOf("mlp-player") == -1)
+					continue;
+
+				var 
+					url = rule.style.background,
+					start = url.indexOf("url(\"")+5,
+					stop = url.indexOf("\")", start),
+					url = url.slice(start, stop),
+					href = (url[0] == "/") ? "http://"+window.location.host : window.location.href,
+					img = new Image();
+
+				if(url.indexOf("http://") != -1)
+					img.src = url;
+				else
+					img.src = href+url;
+			}
+		}
 	}
 
 }).call(this);
