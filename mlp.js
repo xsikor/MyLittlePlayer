@@ -94,6 +94,7 @@
 		this.player = elem.getElementsByTagName("audio")[0];
 		this.player.volume = (this.option.volume !== undefined) ? this.option.volume : 1;
 		this.player.type = this.player.getAttribute("type") || "audio/mpeg";
+		this.player.addEventListener("ended", this.PlayEnd);
 
 		this.elems = {
 			"control": [play, stop], //control, maybe need it 
@@ -438,18 +439,20 @@
 
 		//Timeline
 		var time_proc = root.elems.timeline.offsetWidth;
-		var time_width = "0px";
-		var buffer_width = "0px";
-		
+		var time_width = "0";
+		var buffer_width = "0";
 		if(time_proc > 0 && root.player.duration > 0 && root.totalBuffer() != 0) {
 			var cur_proc = root.player.currentTime / root.player.duration;
-			var time_width = (time_proc * cur_proc) - (parseInt(getStyle(root.elems.time_scrub[0], "left"))*2) + "px";
+			var time_width = (time_proc * cur_proc) - (parseInt(getStyle(root.elems.time_scrub[0], "left"))*2);
 			var bufer_proc = (this.flashPlayer) ? root.totalBuffer() : root.totalBuffer() / root.player.duration;
-			var buffer_width = (time_proc * bufer_proc) - (parseInt(getStyle(root.elems.time_scrub[2], "left"))*2) + "px";
+			var buffer_width = (time_proc * bufer_proc) - (parseInt(getStyle(root.elems.time_scrub[2], "left"))*2);
+
 
 		}
-		root.elems.time_scrub[0].style.width = time_width;
-		root.elems.time_scrub[2].style.width = buffer_width;
+		if(time_width < 0)
+			time_width = 0;
+		root.elems.time_scrub[0].style.width = time_width+"px";
+		root.elems.time_scrub[2].style.width = buffer_width+"px";
 		if(root.isDragable === false)
 			root.elems.time_scrub[1].style.left = root.elems.time_scrub[0].offsetWidth+"px";
 
@@ -487,6 +490,14 @@
 			this.LoadCss();
 
 		return tmp;
+	}
+
+
+	Mlp.prototype.PlayEnd = function(e) {
+		var root = Root(e.target).self;
+		root.Stop();
+		this.currentTime = 0;
+		root.render();
 	}
 
 	Mlp.prototype.initFlash = function() {
