@@ -359,9 +359,12 @@
 		e.layerX = e.layerX || e.offsetX;
 		var toTime = (e.layerX / this.offsetWidth) * root.player.duration;
 
-
-		if(root.totalBuffer() >= toTime)
-			root.player.currentTime =  toTime;
+		if(root.flashPlayer !== null && root.totalBuffer() <= toTime) 
+			return false;
+		else if(root.flashPlayer && root.player.duration * root.totalBuffer() <= toTime)
+			return false;
+		
+		root.player.currentTime = toTime;
 		if(root.flashPlayer)
 			root.flashPlayer.position(toTime);
 	}
@@ -517,7 +520,7 @@
 		flashPlayer.timeupdate = function() {
 			var
 				root = Root(this).self,
-				duration = (this.buffered() > this.tmp_durration) ? this.buffered() : this.tmp_durration;
+				duration = (this.durration() > this.tmp_durration) ? this.durration() : this.tmp_durration;
 
 			this.tmp_durration = duration;
 			root.player.currentTime = this.position();
