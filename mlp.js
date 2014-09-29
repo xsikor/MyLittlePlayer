@@ -447,9 +447,8 @@
 		}
 		root.elems.time_scrub[0].style.width = time_width;
 		root.elems.time_scrub[2].style.width = buffer_width;
-
-		if(root.isDragable == false)
-			root.elems.time_scrub[1].style.left = root.elems.time_scrub[0].offsetWidth;
+		if(root.isDragable === false)
+			root.elems.time_scrub[1].style.left = root.elems.time_scrub[0].offsetWidth+"px";
 
 		var t = toMin(root.player.currentTime);
 		var d = toMin(root.player.duration);
@@ -618,14 +617,18 @@
 	function loadImages() {
 		var styles = document.styleSheets;
 		for(var i=0; i<styles.length; i++) {
-			console.log(styles[i]);
-			var rules = styles[i].cssRules;
+
+			try {
+				var rules = styles[i].cssRules;
+			} catch(e) {
+				continue;
+			}
+			
 			for(var j in rules) {
 				var rule = rules[j], selector = rule.selectorText;
 
 				if(rule.style == undefined || selector == undefined || rule.style.background == "" || selector.indexOf("mlp-player") == -1)
 					continue;
-
 				var 
 					url = rule.style.background,
 					start = url.indexOf("url(\"")+5,
