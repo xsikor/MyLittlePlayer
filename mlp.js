@@ -156,6 +156,7 @@
 			tmp.rel = "stylesheet";
 			tmp.type = "text/css";
 			document.getElementsByTagName("head")[0].appendChild(tmp);
+			cssLoaded = true;
 		}
 
 		for(k in obj) {
