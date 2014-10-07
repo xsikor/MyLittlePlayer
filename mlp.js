@@ -3,7 +3,9 @@
 	var cssLoaded = false;
 	var players = new Array();
 
-	loadImages();
+	window.onload = loadImages;
+
+
 	Mlp = function (option) {
 		console.log("MyLittlePlayer init", count);
 		this.option = option || false;
@@ -637,6 +639,7 @@
 	//Some shit for load all images together
 	function loadImages() {
 		var styles = document.styleSheets;
+		console.log(styles,styles.length);
 		for(var i=0; i<styles.length; i++) {
 			try {
 				var rules = styles[i].cssRules;
@@ -644,9 +647,8 @@
 				continue;
 			}
 			
-			for(var j in rules) {
+			for(var j = 0; j<rules.length; j++) {
 				var rule = rules[j], selector = rule.selectorText;
-
 				if(rule.style == undefined || selector == undefined || rule.style.background == "" || selector.indexOf("mlp-player") == -1)
 					continue;
 				var 
