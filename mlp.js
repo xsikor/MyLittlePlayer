@@ -215,7 +215,7 @@
 	//For more comfortable api
 	Mlp.prototype.Play = function() {
 		if(this.option.autoStop == true ) {
-			StopAll();
+			StopAll(this);
 		}
 
 		if(this.flashPlayer && this.flashPlayer != null)
@@ -666,10 +666,11 @@
 	}
 
 
-	function StopAll() {
+	function StopAll(current) {
 		var total = players.length;
-
 		for(var i=0; i<total; i++) {
+			if(players[i].player.currentTime > 0 && players[i].player != current.player)
+				players[i].player.currentTime = 0;
 			players[i].Stop();
 		}
 	}
