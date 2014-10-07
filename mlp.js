@@ -1,6 +1,8 @@
 (function() {
 	var count = 0;
 	var cssLoaded = false;
+	var players = new Array();
+
 	loadImages();
 	Mlp = function (option) {
 		console.log("MyLittlePlayer init", count);
@@ -117,6 +119,7 @@
 
 		if(this.player.canPlayType(this.player.type) == "")
 			this.initFlash();
+		players.push(this);
 	}
 
 	Mlp.prototype.AddEvents = function() {
@@ -211,6 +214,10 @@
 
 	//For more comfortable api
 	Mlp.prototype.Play = function() {
+		if(this.option.autoStop == true ) {
+			StopAll();
+		}
+
 		if(this.flashPlayer && this.flashPlayer != null)
 			this.flashPlayer.play();
 		else {
@@ -631,7 +638,6 @@
 	function loadImages() {
 		var styles = document.styleSheets;
 		for(var i=0; i<styles.length; i++) {
-
 			try {
 				var rules = styles[i].cssRules;
 			} catch(e) {
@@ -656,6 +662,15 @@
 				else
 					img.src = href+url;
 			}
+		}
+	}
+
+
+	function StopAll() {
+		var total = players.length;
+
+		for(var i=0; i<total; i++) {
+			players[i].Stop();
 		}
 	}
 
