@@ -3,11 +3,7 @@
 	var cssLoaded = false;
 	var players = new Array();
 
-	window.onload = loadImages;
-
-
 	Mlp = function (option) {
-		console.log("MyLittlePlayer init", count);
 		this.option = option || false;
 		this.players = [];
 		this.player = null;
@@ -32,6 +28,9 @@
 
 	Mlp.prototype.Create = function(elems) {
 		var elems = elems || "audio";
+		if(players.length == 0) {
+				loadImages();
+			}
 
 		if(typeof elems == "string") {
 			var elems = this.Select(elems);
@@ -199,7 +198,6 @@
 		if(this.option.autoPlay && this.flashPlayer == null)
 			this.Play();
 		this.elems.root.style.display = "block";
-
 		this.render();
 
 	}
@@ -640,13 +638,15 @@
 	//Some shit for load all images together
 	function loadImages() {
 		var styles = document.styleSheets;
+		
 		for(var i=0; i<styles.length; i++) {
 			try {
 				var rules = styles[i].cssRules;
 			} catch(e) {
 				continue;
 			}
-			
+			if(rules == null)
+				continue;
 			for(var j = 0; j<rules.length; j++) {
 				var rule = rules[j], selector = rule.selectorText;
 				if(rule.style == undefined || selector == undefined || rule.style.background == "" || selector.indexOf("mlp-player") == -1)
