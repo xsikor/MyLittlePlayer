@@ -639,7 +639,6 @@
 	//Some shit for load all images together
 	function loadImages() {
 		var styles = document.styleSheets;
-		console.log(styles,styles.length);
 		for(var i=0; i<styles.length; i++) {
 			try {
 				var rules = styles[i].cssRules;
