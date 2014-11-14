@@ -55,7 +55,7 @@
 	}
 
 	Mlp.prototype.createHelper = function(elem) {
-		if(elem == false || elem.length != undefined)
+		if(elem == false || elem.length != undefined || elem.parentElement.className.indexOf("mlp-player") != -1)
 			return false
 		elem.preload = this.preload;
 		var tmp = document.createElement('div');
