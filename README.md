@@ -11,6 +11,7 @@ TODO
 - Change addElements function, add to default layer
 - Show/hide element by options value
 - Change autostop default value to true
+- Fix img preload in chrome
 
 Usage
 ==============
