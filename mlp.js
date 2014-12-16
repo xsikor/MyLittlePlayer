@@ -618,7 +618,7 @@
 		</div>\
 		<div class="message"></div>\
 		<a href="" id="download_href">\
-			<div class="download"></div>\
+			<div class="download" style="display: none;"></div>\
 		</a>';
 
 
