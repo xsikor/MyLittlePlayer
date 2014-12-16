@@ -1,67 +1,76 @@
 (function() {
 	var count = 0;
 	var cssLoaded = false;
-	var players = new Array();
+	var players = [];
 
 	Mlp = function (option) {
 		this.option = option || false;
 		this.players = [];
 		this.player = null;
 		this.flashPlayer = null;
-		this.elems = null;
+		this.elems = [];
 		this.isOnline = option.isOnline || false;
-		this.preload = option.preload || "none"
+		this.preload = option.preload || "none";
 		this.loadCount = 0;
 		this.isReady = false;
 		this.isDragable = false;
-	}
+
+	};
+  
 	//Select elements by CSS selectors
 	Mlp.prototype.Select = function(selector, parrent) {
-		var selector = selector;
-		var parrent = parrent || document;
+		parrent = parrent || document;
 		var element = parrent.querySelectorAll(selector);
+    
 		if(selector[0] == "#")
 			element = element[0];
 
 		return element;
-	}
+	};
 
 	Mlp.prototype.Create = function(elems) {
-		var elems = elems || "audio";
-		if(players.length == 0) {
+		elems = elems || "audio";
+		
+    if(players.length === 0) {
 				loadImages();
 			}
 
 		if(typeof elems == "string") {
-			var elems = this.Select(elems);
+			elems = this.Select(elems);
 		}
-		if(elems.length == undefined) {
+		if(elems.length === undefined) {
 			this.createHelper(elems);
 			return true;
 		}
 
 		var total = elems.length; //Hack for chrome
 
-		for(i=0; i<total; i++) {
+		for(var i=0; i<total; i++) {
 			if(typeof elems[i] != "object")
 				continue;
 
 			var tmp = new Mlp(this.option);
+
+			if(this.markup != tmp.markup)
+				tmp.markup = this.markup;
+
 			tmp.Create(elems[i]);
 
 			this.players.push(tmp);
 				
 		}
-	}
+	};
 
 	Mlp.prototype.createHelper = function(elem) {
-		if(elem == false || elem.length != undefined || elem.parentElement.className.indexOf("mlp-player") != -1)
-			return false
+		if(elem === false || elem.length !== undefined || elem.parentElement.className.indexOf("mlp-player") != -1)
+			return false;
+    
 		elem.preload = this.preload;
 		var tmp = document.createElement('div');
 		tmp.setAttribute("class", "mlp-player "+elem.className);
 		tmp.setAttribute("id", "mlp-"+(++count).toString());
 		tmp.appendChild(elem.cloneNode(true));
+
 		tmp.innerHTML += this.markup;
 		elem.outerHTML = tmp.outerHTML;
 
@@ -88,11 +97,11 @@
 			vol_scroller = vol_scrub.getElementsByClassName("scroller")[0],
 			vol_fulbar = vol_scrub.getElementsByClassName("full_bar")[0],
 
-			time = elem.getElementsByClassName("time")[0];
-			cur_time = time.getElementsByClassName("cur_time")[0];
-			duration = time.getElementsByClassName("duration")[0];
+			time = elem.getElementsByClassName("time")[0],
+			cur_time = time.getElementsByClassName("cur_time")[0],
+			duration = time.getElementsByClassName("duration")[0],
 
-			message = elem.getElementsByClassName("message")[0],
+			message = elem.getElementsByClassName("message")[0];
 
 		this.player = elem.getElementsByTagName("audio")[0];
 		this.player.volume = (this.option.volume !== undefined) ? this.option.volume : 1;
@@ -112,16 +121,23 @@
 			"vol_scrub": [vol_scrub, vol_scroller, vol_fulbar],
 			"message": message,
 			"root": elem,
-		}
+		};
+    
 		if(this.option.loadCss)
 			this.LoadCss();
 
 		this.AddEvents();
 
-		if(this.player.canPlayType(this.player.type) == "")
+		if(this.player.canPlayType(this.player.type) === "")
 			this.initFlash();
+
+		//Add download link
+		if(this.option.download === true) {
+			elem.children.download_href.href = this.player.src;
+		}
+
 		players.push(this);
-	}
+	};
 
 	Mlp.prototype.AddEvents = function() {
 		//Play & Pause logic
@@ -133,9 +149,9 @@
 		this.elems.vol_ico[1].addEventListener("click", this.MuteUnmute);
 
 		//Volume logic
-		this.elems.vol_scrub[1].addEventListener("mousedown", this.ScrubberEvents)
-		this.elems.vol_scrub[1].addEventListener("mouseup", this.ScrubberEvents)
-		this.elems.vol_scrub[0].addEventListener("click", this.ScrubberClick)
+		this.elems.vol_scrub[1].addEventListener("mousedown", this.ScrubberEvents);
+		this.elems.vol_scrub[1].addEventListener("mouseup", this.ScrubberEvents);
+		this.elems.vol_scrub[0].addEventListener("click", this.ScrubberClick);
 
 		//Timeline logic
 		this.elems.timeline.addEventListener("click", this.TimelineClick);
@@ -144,23 +160,34 @@
 		//Player event's
 		this.player.addEventListener("volumechange", this.render);
 		this.player.addEventListener("timeupdate", this.render);
-	}
+	};
 	
 	Mlp.prototype.LoadCss = function(obj) {
-		var obj = obj || this.elems
+		obj = obj || this.elems;
 
-		if(cssLoaded == false) {
-			tmp = document.createElement("link");
+		if(cssLoaded === false) {
+			var tmp = document.createElement("link");
 			tmp.href = Path("mlp.js")+"mlp.css";
 			tmp.rel = "stylesheet";
 			tmp.type = "text/css";
 			document.getElementsByTagName("head")[0].appendChild(tmp);
 			cssLoaded = true;
 		}
+    
+		var imgOnLoad = function(e) {
+        
+        	var t = e.target;
+	        t.need.style.width = t.width+"px";
+	        t.need.style.height = t.height+"px";
 
-		for(k in obj) {
+	      	t.root.loadCount--;
+	      	if(t.root.loadCount === 0)
+	        	t.root.ready();
+		};
+    
+		for(var k in obj) {
 			var el = obj[k];
-			if(el.length != undefined) {
+			if(el.length !== undefined) {
 				this.LoadCss(el);
 				continue;
 			}
@@ -168,39 +195,30 @@
 			if(!bg)
 				continue;
 
-			bg = bg.slice(bg.indexOf("http"), bg.indexOf('")'))
+			bg = bg.slice( bg.indexOf("http"), bg.indexOf( '")' ));
 			if(bg.length > 5) {				
 				var img = new Image();
 				img.src = bg;
 				img.need = el;
 				img.root = this;
 
-				el.ondragstart = function () {return false;}
+				this.loadCount+=1;
 
-				this.loadCount++;
-
-				img.onload = function(e) {
-					var t = e.target;
-					
-					t.need.style.width = t.width+"px";
-					t.need.style.height = t.height+"px";
-
-					if(--t.root.loadCount == 0)
-						t.root.ready();
-				}
+				img.onload = imgOnLoad;
 
 			}
 		}
-	}
+	};
 
 	Mlp.prototype.ready = function() {
 		this.isReady = true;
-		if(this.option.autoPlay && this.flashPlayer == null)
+		if(this.option.autoPlay && this.flashPlayer === null)
 			this.Play();
-		this.elems.root.style.display = "block";
-		this.render();
 
-	}
+		this.elems.root.style.display = "block";
+
+		this.render();
+	};
 
 	Mlp.prototype.PlayPause = function(e) {
 		//If click class is play - start playing
@@ -211,15 +229,15 @@
 			root.Stop();
 		else
 			root.Play();
-	}
+	};
 
 	//For more comfortable api
 	Mlp.prototype.Play = function() {
-		if(this.option.autoStop == true ) {
+		if(this.option.autoStop === true ) {
 			StopAll(this);
 		}
 
-		if(this.flashPlayer && this.flashPlayer != null)
+		if(this.flashPlayer && this.flashPlayer !== null)
 			this.flashPlayer.play();
 		else {
 			if(this.isOnline) {
@@ -235,7 +253,7 @@
 			this.player.play();
 		}
 		hideShow(this.elems.control);
-	}
+	};
 
 	Mlp.prototype.Stop = function() {
 		if(this.flashPlayer)
@@ -243,7 +261,7 @@
 		else
 			this.player.pause();
 		hideShow(this.elems.control, true);	
-	}
+	};
 
 	Mlp.prototype.MuteUnmute = function(e) {
 		var root = Root(e.target).self;
@@ -252,7 +270,7 @@
 			root.Mute();
 		else
 			root.Unmute();
-	}
+	};
 
 	Mlp.prototype.Mute = function() {
 		this.player.tmp_vol = this.player.volume;
@@ -260,14 +278,14 @@
 			this.flashPlayer.mute(true);
 		this.player.volume = 0;
 		hideShow(this.elems.vol_ico);
-	}
+	};
 
 	Mlp.prototype.Unmute = function() {
 		this.player.volume = this.player.tmp_vol || this.player.volume;
 		if(this.flashPlayer)
 			this.flashPlayer.mute(false);
 		hideShow(this.elems.vol_ico, true);
-	}
+	};
 
 	Mlp.prototype.ScrubberEvents = function(e) {
 		var root = Root(e.target).self;
@@ -295,7 +313,7 @@
 			document.removeEventListener("mouseup", root.ScrubberMove, false);
 		} else {
 			var move = (scrub.getBoundingClientRect().left - e.clientX);
-			var left = parseInt((scrub.style.left != "") ? scrub.style.left : getStyle(scrub, "left"));
+			var left = parseInt((scrub.style.left !== "") ? scrub.style.left : getStyle(scrub, "left"));
 			var point = left - move;
 			if(point > (bg_pos.width) || point <= 0) {
 				root.elems.volume_ctrl.removeEventListener("mousemove", root.ScrubberMove, false);
@@ -329,7 +347,7 @@
 		}
 
 		return false;
-	}
+	};
 
 	Mlp.prototype.ScrubberClick = function(e) {
 		var root = Root(this).self;
@@ -356,7 +374,7 @@
 			root.flashPlayer.volume(volume);
 
 		return false;
-	}
+	};
 
 	Mlp.prototype.TimelineClick = function(e) {
 		var root = Root(this).self;
@@ -376,7 +394,7 @@
 		root.player.currentTime = toTime;
 		if(root.flashPlayer)
 			root.flashPlayer.position(toTime);
-	}
+	};
 
 	Mlp.prototype.StartDragTimeScrubber = function(e) {
 		var root = Root(this).self;
@@ -387,18 +405,18 @@
 		root.elems.time_scrub[1].addEventListener("mouseup", root.StopDragTimeScrubber);
 
 		return false;
-	}
+	};
 
 	Mlp.prototype.MoveTimeScrubber = function(e) {
 		var
 			root = Root(this).self,
 			scrub = root.elems.time_scrub[1],
 			move = scrub.getBoundingClientRect().left - e.clientX,
-			left = parseInt((scrub.style.left != "") ? scrub.style.left : getStyle(scrub, "left")),
+			left = parseInt((scrub.style.left !== "") ? scrub.style.left : getStyle(scrub, "left")),
 			point = (left - move) - scrub.offsetWidth/3;
 		
 		if(point >= root.elems.timeline.offsetWidth - scrub.offsetWidth) {
-			point = root.elems.timeline.offsetWidth - scrub.offsetWidth
+			point = root.elems.timeline.offsetWidth - scrub.offsetWidth;
 			root.StopDragTimeScrubber();
 		} else if(point <= 0)
 			point = 0;
@@ -406,7 +424,7 @@
 		scrub.style.left = point + "px";
 		
 		return false;
-	}
+	};
 
 	Mlp.prototype.StopDragTimeScrubber = function(e) {
 		var 
@@ -429,12 +447,12 @@
 		root.isDragable = false;
 		root.render();
 		return false;
-	}
+	};
 
 
 	Mlp.prototype.render = function(e) {
 		var root = this;
-		if(root.elems == undefined) {
+		if(root.elems === undefined) {
 			root = e.target.parentElement.self;
 		}
 		
@@ -449,11 +467,11 @@
 		var time_proc = root.elems.timeline.offsetWidth;
 		var time_width = "0";
 		var buffer_width = "0";
-		if(time_proc > 0 && root.player.duration > 0 && root.totalBuffer() != 0) {
+		if(time_proc > 0 && root.player.duration > 0 && root.totalBuffer() !== 0) {
 			var cur_proc = root.player.currentTime / root.player.duration;
-			var time_width = (time_proc * cur_proc) - (parseInt(getStyle(root.elems.time_scrub[0], "left"))*2);
+			time_width = (time_proc * cur_proc) - (parseInt(getStyle(root.elems.time_scrub[0], "left"))*2);
 			var bufer_proc = (this.flashPlayer) ? root.totalBuffer() : root.totalBuffer() / root.player.duration;
-			var buffer_width = (time_proc * bufer_proc) - (parseInt(getStyle(root.elems.time_scrub[2], "left"))*2);
+			buffer_width = (time_proc * bufer_proc) - (parseInt(getStyle(root.elems.time_scrub[2], "left"))*2);
 
 
 		}
@@ -469,25 +487,25 @@
 
 		root.elems.cur_time.innerHTML = t.m + ":" + t.s;
 		root.elems.duration.innerHTML = d.m + ":" + d.s;
-	}
+	};
 
 	Mlp.prototype.totalBuffer = function() {
 		var buff = 0;
 		if(this.flashPlayer) {
 			buff = this.flashPlayer.totalLoaded();
-		} else if(this.player.buffered.length != 0) {
+		} else if(this.player.buffered.length !== 0) {
 			buff = this.player.buffered.end(0) || 0;
 		}
 		return buff;
-	}
+	};
 
 	Mlp.prototype.addElement = function(option) {
-		if(option == undefined)
+		if(option === undefined)
 			return false;
 		
-		var className = option.className
+		var className = option.className;
 		var parent = option.parent || this.elems.root;
-		var tagName = option.tagName || "div"
+		var tagName = option.tagName || "div";
 
 		var tmp = document.createElement(tagName);
 		tmp.setAttribute("class", className);
@@ -498,6 +516,25 @@
 			this.LoadCss();
 
 		return tmp;
+	};
+
+	Mlp.prototype.addStaticElement = function(option) {
+		if(option === undefined)
+			return false;
+
+		var markup = document.createElement("div");
+			markup.innerHTML = this.markup;
+
+		var className = option.className,
+			parent = markup.querySelector(parent) || markup,
+			tagName = option.tagName || "div",
+			tmp = document.createElement(tagName);
+
+		tmp.setAttribute("class", className);
+		this.elems[className] = tmp;
+
+		markup.appendChild(tmp);
+		this.markup = markup.innerHTML;		
 	}
 
 
@@ -506,7 +543,7 @@
 		root.Stop();
 		this.currentTime = 0;
 		root.render();
-	}
+	};
 
 	Mlp.prototype.initFlash = function() {
 
@@ -529,12 +566,12 @@
 			var root = Root(this).self;
 			this.init(root.player.src);
 			console.log(this.id, "init");
-			vol = (root.option.volume !== undefined) ? root.option.volume : 1;
+			var vol = (root.option.volume !== undefined) ? root.option.volume : 1;
 			this.volume(vol);
 			root.player = {};
 			if(root.option.autoPlay)
 				root.Play();
-		}
+		};
 
 		flashPlayer.timeupdate = function() {
 			var
@@ -547,12 +584,12 @@
 			root.player.duration = this.tmp_durration;
 			root.player.muted = (this.volume() > 0) ? false : true;
 			root.render();
-		}
+		};
 
 		this.flashPlayer = flashPlayer;
-	}
+	};
 
-
+	/*jshint multistr: true */
 	Mlp.prototype.markup = '\
 		<div class="control">\
 			<div class="play"></div>\
@@ -579,15 +616,21 @@
 				<div class="scroller"></div>\
 			</div>\
 		</div>\
-		<div class="message"></div>';
+		<div class="message"></div>\
+		<a href="" id="download_href">\
+			<div class="download"></div>\
+		</a>';
 
 
 
 	function getStyle(elem, option) {
-		var option = option || false;
+		option = option || false;
+    
 		if(typeof elem != "object")
 			return false;
-		ret = window.getComputedStyle(elem);
+    
+		var ret = window.getComputedStyle(elem);
+    
 		if(option)
 			return ret[option] || false;
 		else
@@ -596,7 +639,7 @@
 
 
 	function hideShow(first, secReverse) {
-		if(typeof first == "object" && secReverse == undefined) {
+		if(typeof first == "object" && secReverse === undefined) {
 			secReverse = first[1];
 			first = first[0];
 		} else if(typeof first == "object" && secReverse === true) {
@@ -609,19 +652,21 @@
 	}
 
 	function Root(el) {
-		return(el.className != undefined && el.className.indexOf("mlp-player") == -1 && el.parentElement != null) ? Root(el.parentElement) : el;
+		return(el.className !== undefined && el.className.indexOf("mlp-player") == -1 && el.parentElement !== null) ? Root(el.parentElement) : el;
 	}
 
 	function toMin(seconds) {
 		if(isNaN(seconds))
 			seconds = 0;
 
-		var s = Math.floor(seconds);
-		var m = Math.floor(s/60)
-		if(s >= 60)
+		var s = Math.floor(seconds),
+				m = Math.floor(s/60);
+		
+    if(s >= 60)
 			s -= m*60;
 		if(s < 10) 
-			s = "0"+s.toString()
+			s = "0"+s.toString();
+    
 		return {"m": m, "s": s};
 	}
 
@@ -645,11 +690,11 @@
 			} catch(e) {
 				continue;
 			}
-			if(rules == null)
+			if(rules === null)
 				continue;
 			for(var j = 0; j<rules.length; j++) {
 				var rule = rules[j], selector = rule.selectorText;
-				if(rule.style == undefined || selector == undefined || rule.style.background == "" || selector.indexOf("mlp-player") == -1)
+				if(rule.style === undefined || selector === undefined || rule.style.background === "" || selector.indexOf("mlp-player") == -1)
 					continue;
 				var 
 					url = rule.style.background,

@@ -91,3 +91,8 @@
 .mlp-player .message {
 	position: absolute;
 }
+
+.mlp-player .download {
+	position: absolute;
+	cursor: pointer;
+}
